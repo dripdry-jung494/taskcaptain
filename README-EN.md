@@ -2,122 +2,92 @@
 
 # TaskCaptain
 
-### The AI captain for autonomous task delivery
-
 **Turn goals into running execution until results are delivered.**
 
-[English](./README-EN.md) | [中文](./README.md)
+TaskCaptain is a local execution console for Codex-driven work.
+It separates **User ↔ Agent**, **Agent ↔ Codex**, and **execution logs** into distinct surfaces so task progress remains visible, controllable, and inspectable.
+
+[中文](./README.md) · [User Guide](./docs/USER_GUIDE.md) · [Deployment](./docs/DEPLOYMENT.md)
 
 </div>
 
----
-
-## What is TaskCaptain?
-
-**TaskCaptain is an autonomous execution layer for Codex.**
-
-It is not another chat window.
-It does not stop after giving suggestions.
-It takes ownership of a task, decides the next step, keeps execution moving, and pushes the work toward an actual delivered outcome.
-
-If you do not want to babysit AI tools, repeatedly type “continue”, or manually keep work on track, TaskCaptain is built for exactly that.
+![TaskCaptain hero](./hero.png)
 
 ---
 
-## Core positioning
+## Overview
 
-**TaskCaptain is an AI execution lead that keeps a task moving until the result is delivered.**
+TaskCaptain is not a generic chat interface.
 
-In simpler terms:
+Its purpose is to **take over task supervision, keep Codex moving, and preserve state, dialogue, and logs inside a local workspace that can actually be inspected.**
 
-- It is responsible for progress, not just replies.
-- It is responsible for directing work, not just suggesting ideas.
-- It is responsible for delivery, not just producing a draft.
+For work that needs continuous execution, iterative refinement, and mid-run requirement changes, TaskCaptain provides an execution-oriented control surface rather than a one-shot answer box.
 
 ---
 
-## Why it is different
+## Core capabilities
 
-### 1. It keeps running, not just replying
+### Continuous execution instead of one-shot replies
 
-TaskCaptain does not stop at “here is a good approach”.
-It keeps the task moving until there is a real result, or a clear failure boundary.
+TaskCaptain treats work as an ongoing execution flow, not as a single conversational response.
 
-### 2. It directs Codex automatically
+### Clear separation between Agent and Codex
 
-It breaks work down, decides the next move, directs Codex step by step, and keeps the execution flow under control.
+- **Agent**: understands the goal, plans next steps, supervises progress, and folds in new requirements
+- **Codex**: executes implementation work inside the task workspace, produces deliverables, and returns execution output
 
-### 3. It keeps moving without supervision
+### Inspectable end to end
 
-Work can keep running while you sleep, switch context, or leave the keyboard.
+The interface preserves three categories of information:
 
----
+- **User ↔ Agent** control dialogue
+- **Agent ↔ Codex** execution dialogue
+- **raw logs**
 
-## How it works
+That makes it easier to understand why a task continued, why it failed, and where execution became blocked.
 
-TaskCaptain makes the execution flow visible through 3 separate layers:
+### Local-first and disk-backed
 
-- **User ↔ Agent** dialogue
-- **Agent ↔ Codex** dialogue
-- **raw execution logs**
+Each task keeps isolated:
 
-That gives you a system that is easier to inspect, debug, and trust.
-
-You can see:
-
-- how a task is being driven forward
-- how the Agent is directing Codex
-- what Codex actually returns
-- where the flow slows down or fails
-
-Each task gets isolated:
 - config
 - state
 - logs
 - Agent profile
 - Codex session
 
----
-
-## What it is good for
-
-TaskCaptain is a good fit when:
-
-- you have a clear goal and want AI to keep moving toward it
-- you want Codex to execute work, not just answer questions
-- you want tasks to continue in the background
-- you want to reuse a strong Agent identity across tasks
-- you want a local workflow you can inspect and modify
+State is persisted on disk so the system remains inspectable, portable, and recoverable.
 
 ---
 
-## Features
+## Good fit for
 
-- local browser UI
-- isolated per-task state
-- reusable Agent Profiles
-- self-test
-- start / continue run
-- stop run
-- save current Agent identity as reusable profile
-- append new instructions mid-task
-- bilingual UI (Chinese / English)
-- separate dialogue views + raw logs
-- no frontend build step
+TaskCaptain is well suited when you need:
+
+- AI to keep moving instead of only answering
+- background execution for development or automation work
+- a full record for debugging, review, or continuation
+- reusable Agent identities across tasks
+- a Codex workspace with clear separation between supervision and execution
 
 ---
 
-## Interface structure
+## Product structure
 
-TaskCaptain is designed around execution, not around chat.
+### Home page
 
-### Home
+The home page provides:
+
 - task list
 - Agent Profiles list
-- create task panel
-- create profile panel
+- task creation form
+- reusable Profile creation form
+- bulk deletion for non-running tasks
 
 ### Task detail page
+
+Each task page provides:
+
 - configuration details
 - User ↔ Agent dialogue
 - Agent ↔ Codex dialogue
@@ -125,30 +95,58 @@ TaskCaptain is designed around execution, not around chat.
 - Agent log
 - Codex log
 
+### Reusable Agent Profiles
+
+Profiles store the default identity and behavioral settings of the supervisory Agent, including:
+
+- model
+- thinking
+- soul
+- skills
+- description
+
+Tasks can inherit a profile and override selected fields locally.
+
+---
+
+## Main features
+
+- local browser UI
+- isolated per-task state and logs
+- reusable Agent Profiles
+- self-test
+- Start / Continue Run
+- Stop Run
+- append new instructions mid-run
+- save current Agent as reusable profile
+- bilingual UI (Chinese / English)
+- no frontend build step
+
 ---
 
 ## Quick start
 
-### 1. Clone the repo
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/LongWeihan/taskcaptain.git
 cd taskcaptain
 ```
 
-### 2. Start
+### 2. Start the service
 
 ```bash
+chmod +x run.sh restart.sh
 ./run.sh
 ```
 
-Open:
+Default address:
 
 ```text
 http://127.0.0.1:8765
 ```
 
-### 3. Optional local config
+### 3. Optional: load local environment config
 
 ```bash
 cp .env.example .env
@@ -160,28 +158,58 @@ set +a
 
 ---
 
-## Common launch patterns
+## Requirements
 
-### One-line start
+- Linux / WSL2 recommended
+- Python 3.10+
+- `bash`
+- `ss`
+- `acpx` installed, or provided via `ACPX_BIN`
+
+---
+
+## Configuration
+
+TaskCaptain supports environment-variable based startup configuration.
+
+### Common environment variables
 
 ```bash
-git clone https://github.com/LongWeihan/taskcaptain.git && cd taskcaptain && chmod +x run.sh restart.sh && ./run.sh
-```
-
-### With explicit `acpx` path
-
-```bash
+export PRODUCTS_UI_HOST=127.0.0.1
+export PRODUCTS_UI_PORT=8765
+export PRODUCTS_UI_DEFAULT_LANG=en
+export PRODUCTS_UI_DEFAULT_OPENAI_BASE_URL=http://127.0.0.1:8317/v1
+export PRODUCTS_UI_DEFAULT_PRODUCT_FOLDER="$PWD/workspace"
+export PRODUCTS_UI_PROXY=
+export PRODUCTS_UI_NO_PROXY=127.0.0.1,localhost,::1
 export ACPX_BIN=/absolute/path/to/acpx
-./run.sh
 ```
 
-### With custom port / endpoint
+### Example
 
 ```bash
 export PRODUCTS_UI_PORT=8877
 export PRODUCTS_UI_DEFAULT_OPENAI_BASE_URL=http://127.0.0.1:8317/v1
 ./run.sh
 ```
+
+For deployment notes, see [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md).
+
+---
+
+## Runtime behavior
+
+### `run.sh`
+
+- starts TaskCaptain in the background when the port is free
+- exits cleanly with the current address and log path when the service is already running
+
+### `restart.sh`
+
+- stops the current TaskCaptain process on the configured port
+- waits for port release
+- force-kills lingering processes when needed
+- clears the server log and starts again
 
 ---
 
@@ -197,7 +225,6 @@ taskcaptain/
 │   └── trash/
 ├── docs/
 │   ├── ARCHITECTURE.md
-│   ├── BRAND.md
 │   ├── DATA_MODEL.md
 │   ├── DEPLOYMENT.md
 │   └── USER_GUIDE.md
@@ -211,55 +238,55 @@ taskcaptain/
 ├── Makefile
 ├── README.md
 ├── README-EN.md
+├── SECURITY.md
+├── hero.png
 ├── restart.sh
 └── run.sh
 ```
 
 ---
 
-## Docs
+## Documentation
 
 - [Chinese README](./README.md)
 - [User Guide](./docs/USER_GUIDE.md)
 - [Deployment](./docs/DEPLOYMENT.md)
 - [Architecture](./docs/ARCHITECTURE.md)
 - [Data Model](./docs/DATA_MODEL.md)
-- [Brand Notes](./docs/BRAND.md)
+- [Contributing](./CONTRIBUTING.md)
+- [Security Policy](./SECURITY.md)
 
 ---
 
-## Brand voice
+## Security notes
 
-TaskCaptain should not feel like “a clever assistant”.
-It should feel like “someone actually responsible for getting the work done”.
+TaskCaptain is currently intended for **trusted local environments**.
 
-The voice should be:
+The repository does not currently provide:
 
-- **Calm**
-- **Commanding**
-- **Outcome-driven**
+- multi-user authentication
+- permission separation
+- public-facing access control
 
-Words it should naturally lean toward:
+If you need remote access, deploy it behind a reverse proxy and add at minimum:
 
-- run
-- drive
-- direct
-- move
-- deliver
-- finish
-- ship
-- own
+- authentication
+- HTTPS
+- IP restrictions
+- least-privilege runtime practices
 
-Words it should avoid overusing:
+See [SECURITY.md](./SECURITY.md) for guidance.
 
-- magical
-- revolutionary
-- next-generation
-- intelligent assistant
-- productivity booster
+---
+
+## Open source and project policy
+
+- License: [MIT](./LICENSE)
+- Contributing: [CONTRIBUTING.md](./CONTRIBUTING.md)
+- Security: [SECURITY.md](./SECURITY.md)
 
 ---
 
 ## License
 
-MIT
+This project is released under the [MIT License](./LICENSE).

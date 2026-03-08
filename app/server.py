@@ -19,17 +19,23 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, quote, urlparse
 from urllib.request import Request, urlopen
 
-ROOT = Path('/home/a/.openclaw/workspace-local8317/products-ui')
+ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / 'data'
 PRODUCTS = DATA / 'products'
 TRASH = DATA / 'trash'
 CLAW_PROFILES = DATA / 'claw-profiles'
 RUNS = ROOT / 'runs'
-ACPX = Path('/home/a/.openclaw/extensions/acpx/node_modules/.bin/acpx')
+DEFAULT_ACPX = '/home/a/.openclaw/extensions/acpx/node_modules/.bin/acpx'
+ACPX = Path(os.environ.get('ACPX_BIN', DEFAULT_ACPX))
 
-HOST = '127.0.0.1'
-PORT = 8765
-DEFAULT_LANG = 'en'
+HOST = os.environ.get('PRODUCTS_UI_HOST', '127.0.0.1')
+PORT = int(os.environ.get('PRODUCTS_UI_PORT', '8765'))
+DEFAULT_LANG = os.environ.get('PRODUCTS_UI_DEFAULT_LANG', 'en')
+DEFAULT_AGENT_ENDPOINT = os.environ.get('PRODUCTS_UI_DEFAULT_OPENAI_BASE_URL', 'http://localhost:8317/v1')
+DEFAULT_CODEX_ENDPOINT = os.environ.get('PRODUCTS_UI_DEFAULT_OPENAI_BASE_URL', 'http://localhost:8317/v1')
+DEFAULT_PRODUCT_FOLDER = os.environ.get('PRODUCTS_UI_DEFAULT_PRODUCT_FOLDER', str(ROOT / 'workspace'))
+DEFAULT_PROXY = os.environ.get('PRODUCTS_UI_PROXY', '').strip()
+DEFAULT_NO_PROXY = os.environ.get('PRODUCTS_UI_NO_PROXY', '127.0.0.1,localhost,::1').strip()
 DEFAULT_PROFILE_ID = 'sandrone-default'
 
 for p in [PRODUCTS, TRASH, CLAW_PROFILES, RUNS]:
@@ -375,7 +381,7 @@ def normalize_config(cfg: dict) -> tuple[dict, bool]:
     claw = cfg.setdefault('claw', {})
     codex = cfg.setdefault('codex', {})
     defaults = {
-        'endpoint': 'http://localhost:8317/v1',
+        'endpoint': DEFAULT_AGENT_ENDPOINT,
         'apiKey': '',
         'profileId': DEFAULT_PROFILE_ID,
         'model': '',
@@ -388,7 +394,7 @@ def normalize_config(cfg: dict) -> tuple[dict, bool]:
             claw[k] = v
             changed = True
     codex_defaults = {
-        'endpoint': 'http://localhost:8317/v1',
+        'endpoint': DEFAULT_CODEX_ENDPOINT,
         'apiKey': '',
         'model': 'gpt-5.4-medium',
         'thinking': 'medium',
@@ -607,12 +613,16 @@ def build_codex_env(cfg: dict) -> dict:
         env['OPENAI_BASE_URL'] = codex['endpoint']
     if codex.get('apiKey'):
         env['OPENAI_API_KEY'] = codex['apiKey']
-    env['HTTP_PROXY'] = 'http://127.0.0.1:7897'
-    env['HTTPS_PROXY'] = 'http://127.0.0.1:7897'
-    env['http_proxy'] = 'http://127.0.0.1:7897'
-    env['https_proxy'] = 'http://127.0.0.1:7897'
-    env['NO_PROXY'] = '127.0.0.1,localhost,::1'
-    env['no_proxy'] = '127.0.0.1,localhost,::1'
+    if DEFAULT_PROXY:
+        env['HTTP_PROXY'] = DEFAULT_PROXY
+        env['HTTPS_PROXY'] = DEFAULT_PROXY
+        env['http_proxy'] = DEFAULT_PROXY
+        env['https_proxy'] = DEFAULT_PROXY
+    else:
+        for key in ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy']:
+            env.pop(key, None)
+    env['NO_PROXY'] = DEFAULT_NO_PROXY
+    env['no_proxy'] = DEFAULT_NO_PROXY
     return env
 
 
@@ -1594,7 +1604,7 @@ class Handler(BaseHTTPRequestHandler):
           <textarea name='goal' rows='3' placeholder='{html.escape(t(lang, 'goal_placeholder'))}'></textarea>
 
           <label>{html.escape(t(lang, 'product_folder'))}</label>
-          <input name='productFolder' value='/mnt/c/claw/codex测试' />
+          <input name='productFolder' value='{html.escape(DEFAULT_PRODUCT_FOLDER)}' />
 
           <div class='settings-group'>
             <div class='settings-group-title'>{html.escape(t(lang, 'claw_setting'))}</div>
@@ -1604,7 +1614,7 @@ class Handler(BaseHTTPRequestHandler):
             <div class='form-row'>
               <div>
                 <label>{html.escape(t(lang, 'claw_endpoint'))}</label>
-                <input name='clawEndpoint' value='http://localhost:8317/v1' />
+                <input name='clawEndpoint' value='{html.escape(DEFAULT_AGENT_ENDPOINT)}' />
               </div>
               <div>
                 <label>{html.escape(t(lang, 'claw_api_key'))}</label>
@@ -1635,7 +1645,7 @@ class Handler(BaseHTTPRequestHandler):
             <div class='form-row'>
               <div>
                 <label>{html.escape(t(lang, 'codex_endpoint'))}</label>
-                <input name='codexEndpoint' value='http://localhost:8317/v1' />
+                <input name='codexEndpoint' value='{html.escape(DEFAULT_CODEX_ENDPOINT)}' />
               </div>
               <div>
                 <label>{html.escape(t(lang, 'codex_api_key'))}</label>
