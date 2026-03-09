@@ -76,7 +76,7 @@ I18N = {
         'active_products': '现有任务',
         'no_products': '还没有任务，先在右侧创建一个。',
         'created_at': '创建时间',
-        'back': '← 返回控制台',
+        'back': '返回控制台',
         'status': '状态',
         'self_test': '自检',
         'configuration_details': '配置详情',
@@ -94,7 +94,7 @@ I18N = {
         'stop_run': '停止运行',
         'delete_product': '删除任务',
         'delete_confirm': '确定删除这个任务吗？会移动到回收区。',
-        'bulk_delete': '批量删除选中项目',
+        'bulk_delete': '批量删除',
         'bulk_delete_confirm': '确定批量删除选中的项目吗？运行中的项目会跳过，其他会移动到回收区。',
         'select_for_bulk_delete': '全选用于批量删除',
         'running_skip_note': '运行中的项目不会被批量删除',
@@ -105,8 +105,8 @@ I18N = {
         'claw_codex_dialogue': 'Agent ↔ Codex 对话区',
         'no_user_claw': '还没有 User ↔ Agent 对话。',
         'no_claw_codex': '还没有 Agent ↔ Codex 对话。',
-        'claw_log': 'Agent 日志',
-        'codex_log': 'Codex 日志',
+        'claw_log': 'Agent Log',
+        'codex_log': 'Codex Log',
         'no_logs': '还没有日志。',
         'untitled': '未命名任务',
         'self_test_details': '自检详情',
@@ -122,7 +122,7 @@ I18N = {
         'detail': '详情',
         'role_policy_title': '执行分工策略',
         'role_policy_body': '当前产品策略：主要代码和产品文件由 Codex 在产品目录内完成；Agent 负责规划、监督、联网、下载数据集、归纳需求与状态推进，不直接在产品目录内写主产品代码。',
-        'claw_identity_title': 'Agent 独立身份',
+        'claw_identity_title': '当前生效的 Agent 身份',
         'claw_identity_body': 'Agent 现在被建模成可复用 profile：profile 负责默认 soul / skills / model / thinking；每个产品只是在此基础上做局部覆盖，因此不会和 Codex 绑成同一个东西。',
         'effective_claw_identity': '当前生效的 Agent 身份',
         'profile_name': 'Profile 名称',
@@ -173,7 +173,7 @@ I18N = {
         'active_products': 'Active Tasks',
         'no_products': 'No tasks yet. Create one on the right to get started.',
         'created_at': 'Created',
-        'back': '← Back to Dashboard',
+        'back': 'Back to Dashboard',
         'status': 'Status',
         'self_test': 'Self-test',
         'configuration_details': 'Configuration Details',
@@ -191,7 +191,7 @@ I18N = {
         'stop_run': 'Stop Run',
         'delete_product': 'Delete Task',
         'delete_confirm': 'Delete this task? It will be moved to trash.',
-        'bulk_delete': 'Bulk Delete Selected',
+        'bulk_delete': 'Bulk Delete',
         'bulk_delete_confirm': 'Delete selected tasks? Running ones will be skipped; others will be moved to trash.',
         'select_for_bulk_delete': 'Select all for bulk delete',
         'running_skip_note': 'Running tasks will be skipped',
@@ -1119,9 +1119,9 @@ def run_supervision_loop(product_id: str, run_id: str, stop_event: threading.Eve
 
 def language_switch_html(current_lang: str, base_path: str) -> str:
     return f"""
-    <div class="lang-switch">
-      <a href="{html.escape(base_path)}?lang=en" class="lang-item {'active' if current_lang == 'en' else ''}">EN</a>
-      <a href="{html.escape(base_path)}?lang=zh" class="lang-item {'active' if current_lang == 'zh' else ''}">中</a>
+    <div class="flex items-center p-1 bg-slate-100 dark:bg-zinc-800 rounded-full border border-slate-200 dark:border-zinc-700">
+      <a href="{html.escape(base_path)}?lang=en" class="px-3 py-1 rounded-full text-xs font-semibold {'bg-white dark:bg-zinc-700 shadow-sm text-slate-800 dark:text-slate-100' if current_lang == 'en' else 'text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-slate-200 transition'}">EN</a>
+      <a href="{html.escape(base_path)}?lang=zh" class="px-3 py-1 rounded-full text-xs font-semibold {'bg-white dark:bg-zinc-700 shadow-sm text-slate-800 dark:text-slate-100' if current_lang == 'zh' else 'text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-slate-200 transition'}">中</a>
     </div>
     """
 
@@ -1131,334 +1131,102 @@ def page_template(title: str, body: str, lang: str, path: str = '/') -> bytes:
     lang_switch = language_switch_html(lang, path)
     return f"""
 <!doctype html>
-<html lang="{html.escape(html_lang)}" data-theme="light">
+<html lang="{html.escape(html_lang)}" class="light">
 <head>
   <meta charset='utf-8'>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{html.escape(title)}</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {{
+      darkMode: 'class',
+      theme: {{
+        extend: {{
+          fontFamily: {{
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }},
+          colors: {{
+            brand: {{ 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 900: '#1e3a8a', 950: '#172554' }},
+            darkbg: '#09090b',
+            darkcard: '#18181b',
+          }}
+        }}
+      }}
+    }}
+  </script>
+  <style type="text/tailwindcss">
+    @layer components {{
+      .badge {{ @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap border; }}
+      .badge-running {{ @apply bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-200 dark:border-blue-500/30; }}
+      .badge-delivered {{ @apply bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30; }}
+      .badge-failed {{ @apply bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-200 dark:border-red-500/30; }}
+      .badge-idle {{ @apply bg-slate-100 text-slate-500 dark:bg-zinc-800 dark:text-zinc-400 border-slate-200 dark:border-zinc-700; }}
+      .badge-stopped {{ @apply bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-amber-200 dark:border-amber-500/30; }}
+    }}
+  </style>
   <style>
-    :root {{
-      --bg: #f8fafc;
-      --surface: #ffffff;
-      --surface-hover: #f1f5f9;
-      --surface-sunken: #f8fafc;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      --border: #e2e8f0;
-      --border-focus: #cbd5e1;
-      --primary: #0f172a;
-      --primary-hover: #000000;
-      --primary-text: #ffffff;
-      --accent: #2563eb;
-      --danger: #dc2626;
-      --danger-bg: #fef2f2;
-      --danger-hover: #fee2e2;
-      --success: #059669;
-      --success-bg: #ecfdf5;
-      --warning: #d97706;
-      --warning-bg: #fffbeb;
-      --radius: 12px;
-      --radius-sm: 8px;
-      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
-      --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.05);
-      --terminal-bg: #0f172a;
-      --terminal-text: #e2e8f0;
-    }}
-
-    [data-theme="dark"] {{
-      --bg: #0a0a0b;
-      --surface: #121214;
-      --surface-hover: #1b1b1f;
-      --surface-sunken: #0b0b0d;
-      --text-main: #ededed;
-      --text-muted: #a1a1aa;
-      --border: #27272a;
-      --border-focus: #3f3f46;
-      --primary: #ffffff;
-      --primary-hover: #e5e7eb;
-      --primary-text: #000000;
-      --accent: #60a5fa;
-      --danger: #f87171;
-      --danger-bg: rgba(239, 68, 68, 0.12);
-      --danger-hover: rgba(239, 68, 68, 0.2);
-      --success: #34d399;
-      --success-bg: rgba(16, 185, 129, 0.12);
-      --warning: #fbbf24;
-      --warning-bg: rgba(245, 158, 11, 0.12);
-      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-      --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.35);
-      --terminal-bg: #000000;
-      --terminal-text: #d4d4d8;
-    }}
-
-    * {{ box-sizing: border-box; }}
-    html {{ scroll-behavior: smooth; }}
-    body {{
-      margin: 0;
-      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--bg);
-      color: var(--text-main);
-      line-height: 1.55;
-      -webkit-font-smoothing: antialiased;
-      transition: background-color 0.25s ease, color 0.25s ease;
-    }}
-    a {{ color: var(--accent); text-decoration: none; }}
-    a:hover {{ text-decoration: underline; }}
-    .mono {{ font-family: 'JetBrains Mono', Consolas, monospace; font-size: 0.86em; word-break: break-word; }}
-    .text-muted, .muted {{ color: var(--text-muted); }}
-    h1, h2, h3 {{ margin: 0; font-weight: 600; letter-spacing: -0.015em; }}
-
-    ::-webkit-scrollbar {{ width: 10px; height: 10px; }}
+    ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
     ::-webkit-scrollbar-track {{ background: transparent; }}
-    ::-webkit-scrollbar-thumb {{ background: var(--border); border-radius: 999px; border: 2px solid var(--bg); }}
-    ::-webkit-scrollbar-thumb:hover {{ background: var(--text-muted); }}
-
-    .app-header {{
-      position: sticky;
-      top: 0;
-      z-index: 40;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      height: 64px;
-      padding: 0 24px;
-      background: color-mix(in srgb, var(--surface) 90%, transparent);
-      border-bottom: 1px solid var(--border);
-      backdrop-filter: blur(8px);
-    }}
-    .header-logo {{
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-      font-size: 1.1rem;
-      letter-spacing: -0.02em;
-      color: var(--text-main);
-    }}
-    .header-actions {{ display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }}
-    .container {{ max-width: 1460px; margin: 0 auto; padding: 28px 24px 40px; }}
-
-    .dashboard-grid {{ display: grid; grid-template-columns: 1fr; gap: 32px; align-items: start; }}
-    .two-col {{ display: grid; grid-template-columns: 1fr; gap: 24px; }}
-    .three-col {{ display: grid; grid-template-columns: 1fr; gap: 24px; }}
-    @media (min-width: 1080px) {{
-      /* Layout swapped: Main content left, Sidebar right */
-      .dashboard-grid {{ grid-template-columns: minmax(0, 1fr) 420px; }}
-      .two-col {{ grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }}
-      .three-col {{ grid-template-columns: repeat(3, minmax(0, 1fr)); }}
-    }}
-    
-    .sticky-panel {{
-      position: sticky;
-      top: 92px;
-      align-self: start;
-      display: grid;
-      grid-template-rows: auto;
-      gap: 20px;
-      max-height: calc(100vh - 112px);
-      overflow-y: auto;
-      padding-right: 4px;
-    }}
-    @media (max-width: 1079px) {{ .sticky-panel {{ position: static; display: flex; flex-direction: column; max-height: none; overflow: visible; }} }}
-
-    .card {{
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-sm);
-      overflow: visible;
-      transition: box-shadow 0.2s ease;
-    }}
-    .card:hover {{ box-shadow: var(--shadow-md); }}
-    .sidebar-card {{ display: flex; flex-direction: column; }}
-    .card-header {{
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      background: color-mix(in srgb, var(--surface) 95%, var(--surface-hover));
-      border-radius: var(--radius) var(--radius) 0 0;
-    }}
-    .card-title {{ font-size: 0.95rem; font-weight: 700; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.03em; display: flex; align-items: center; gap: 8px; }}
-    .card-body {{ padding: 20px; }}
-
-    label {{ display: block; margin-bottom: 6px; font-size: 0.86rem; font-weight: 600; color: var(--text-main); }}
-    input[type="text"], input[type="password"], input:not([type]), textarea, select {{
-      width: 100%;
-      max-width: 100%;
-      display: block;
-      padding: 10px 14px;
-      margin-bottom: 16px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      background: var(--surface-sunken);
-      color: var(--text-main);
-      font: inherit;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-    }}
-    textarea {{ resize: vertical; min-height: 92px; }}
-    select {{
-      appearance: none;
-      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-      background-size: 16px;
-      padding-right: 40px;
-    }}
-    input:focus, textarea:focus, select:focus {{
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
-      background: var(--surface);
-    }}
-    .form-row {{ display: grid; grid-template-columns: 1fr; gap: 14px; }}
-    @media (min-width: 700px) {{ .form-row {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} }}
-    .settings-group {{
-      background: var(--surface-sunken);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      margin-bottom: 16px;
-    }}
-    .settings-group-title {{
-      margin-bottom: 12px;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-muted);
-      font-weight: 700;
-    }}
-
-    .btn {{
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 9px 16px;
-      border-radius: var(--radius-sm);
-      border: 1px solid transparent;
-      font-size: 0.92rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.1s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-      white-space: nowrap;
-    }}
-    .btn:active {{ transform: scale(0.98); }}
-    .btn:disabled {{ opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }}
-    .btn-primary {{ background: var(--primary); color: var(--primary-text); box-shadow: var(--shadow-sm); }}
-    .btn-primary:hover:not(:disabled) {{ background: var(--primary-hover); box-shadow: var(--shadow-md); }}
-    .btn-secondary {{ background: var(--surface); color: var(--text-main); border-color: var(--border); box-shadow: var(--shadow-sm); }}
-    .btn-secondary:hover:not(:disabled) {{ background: var(--surface-hover); border-color: var(--border-focus); }}
-    .btn-danger {{ background: var(--danger-bg); color: var(--danger); border-color: transparent; }}
-    .btn-danger:hover:not(:disabled) {{ background: var(--danger-hover); }}
-    .btn-icon {{ padding: 9px; min-width: 38px; min-height: 38px; }}
-
-    .checkbox-line {{ display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; color: var(--text-main); font-size: 0.92rem; font-weight: 500; cursor: pointer; }}
-    .checkbox-line input {{ margin-top: 3px; cursor: pointer; }}
-
-    .lang-switch {{ display: flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-sunken); flex-shrink: 0; }}
-    .lang-item {{ display: inline-flex; align-items: center; justify-content: center; min-width: 44px; padding: 4px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); transition: all 0.2s ease; }}
-    .lang-item.active {{ background: var(--surface); color: var(--text-main); box-shadow: var(--shadow-sm); font-weight: 700; }}
-    .lang-item:hover:not(.active) {{ text-decoration: none; color: var(--text-main); background: color-mix(in srgb, var(--surface) 50%, transparent); }}
-
-    .view-header {{ display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }}
-    .view-header h1 {{ font-size: 1.85rem; line-height: 1.2; letter-spacing: -0.03em; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }}
-    .view-header h2 {{ font-size: 1.3rem; margin-bottom: 4px; color: var(--text-main); }}
-    .view-header-actions {{ display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }}
-    .back-link {{ display: inline-flex; align-items: center; gap: 6px; margin-bottom: 16px; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; transition: color 0.2s ease; }}
-    .back-link:hover {{ color: var(--text-main); text-decoration: none; }}
-    .page-subtitle {{ margin-top: 6px; color: var(--text-muted); font-size: 0.95rem; max-width: 860px; }}
-
-    .list-toolbar {{ display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow-sm); }}
-    .toolbar-left, .toolbar-right {{ display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }}
-
-    .product-list {{ border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden; box-shadow: var(--shadow-sm); }}
-    .product-row {{ display: flex; gap: 14px; align-items: flex-start; padding: 18px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s ease; }}
-    .product-row:last-child {{ border-bottom: none; }}
-    .product-row:hover {{ background: var(--surface-hover); }}
-    .product-row input[type=checkbox] {{ margin-top: 4px; cursor: pointer; }}
-    .product-content {{ flex: 1; min-width: 0; }}
-    .product-header {{ display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 6px; }}
-    .product-title {{ margin: 0; font-size: 1.05rem; font-weight: 600; color: var(--text-main); word-break: break-word; line-height: 1.3; }}
-    .product-desc {{ margin-bottom: 10px; color: var(--text-muted); font-size: 0.9rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5; }}
-    .product-meta {{ display: flex; gap: 12px 16px; flex-wrap: wrap; color: var(--text-muted); font-size: 0.82rem; }}
-
-    .badge {{ display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 999px; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border: 1px solid transparent; white-space: nowrap; }}
-    .badge-running {{ background: rgba(37, 99, 235, 0.1); color: var(--accent); border-color: rgba(37, 99, 235, 0.2); }}
-    .badge-delivered {{ background: var(--success-bg); color: var(--success); border-color: rgba(5, 150, 105, 0.22); }}
-    .badge-failed {{ background: var(--danger-bg); color: var(--danger); border-color: rgba(220, 38, 38, 0.18); }}
-    .badge-idle {{ background: var(--surface-sunken); color: var(--text-muted); border-color: var(--border); }}
-    .badge-stopped {{ background: var(--warning-bg); color: var(--warning); border-color: rgba(217, 119, 6, 0.18); }}
-
-    .dialogue-shell {{ background: var(--surface-sunken); max-height: 520px; overflow-y: auto; overflow-x: hidden; padding: 20px; border-radius: 0 0 var(--radius) var(--radius); }}
-    .chat-bubble {{ max-width: 90%; padding: 12px 16px; border-radius: 14px; margin-bottom: 16px; font-size: 0.92rem; border: 1px solid var(--border); overflow-wrap: break-word; }}
-    .bubble-bot {{ background: var(--surface); border-bottom-left-radius: 6px; margin-right: auto; box-shadow: var(--shadow-sm); }}
-    .bubble-user {{ background: color-mix(in srgb, var(--accent) 8%, var(--surface)); border-color: color-mix(in srgb, var(--accent) 20%, transparent); border-bottom-right-radius: 6px; margin-left: auto; box-shadow: var(--shadow-sm); }}
-    .bubble-header {{ display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; font-size: 0.75rem; }}
-    .role-claw {{ color: var(--success); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }}
-    .role-user {{ color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }}
-    .role-codex {{ color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }}
-    .convo-text {{ white-space: pre-wrap; line-height: 1.5; }}
-
-    .data-table {{ width: 100%; border-collapse: collapse; table-layout: fixed; }}
-    .data-table th, .data-table td {{ padding: 14px 16px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }}
-    .data-table th {{ color: var(--text-muted); font-size: 0.84rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: var(--surface-hover); }}
-    .data-table th:nth-child(1) {{ width: 28%; border-radius: 8px 0 0 0; }}
-    .data-table th:nth-child(2) {{ width: 14%; }}
-    .data-table th:nth-child(3) {{ width: 58%; border-radius: 0 8px 0 0; }}
-    .data-table tr:last-child td {{ border-bottom: none; }}
-
-    .terminal-window {{ background: var(--terminal-bg); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; min-height: 340px; box-shadow: var(--shadow-md); }}
-    .terminal-header {{ display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.08); }}
+    ::-webkit-scrollbar-thumb {{ background: #cbd5e1; border-radius: 999px; }}
+    .dark ::-webkit-scrollbar-thumb {{ background: #3f3f46; }}
+    ::-webkit-scrollbar-thumb:hover {{ background: #94a3b8; }}
+    .terminal-body::-webkit-scrollbar-thumb {{ background: #475569; }}
+    body {{ -webkit-font-smoothing: antialiased; }}
+    .chat-bubble-user {{ border-bottom-right-radius: 4px; }}
+    .chat-bubble-bot {{ border-bottom-left-radius: 4px; }}
     .terminal-dot {{ width: 12px; height: 12px; border-radius: 999px; flex-shrink: 0; }}
     .dot-r {{ background: #ff5f56; box-shadow: 0 0 4px rgba(255,95,86,0.3); }}
     .dot-y {{ background: #ffbd2e; box-shadow: 0 0 4px rgba(255,189,46,0.3); }}
     .dot-g {{ background: #27c93f; box-shadow: 0 0 4px rgba(39,201,63,0.3); }}
-    .terminal-body {{ padding: 16px; max-height: 360px; overflow-y: auto; overflow-x: auto; color: var(--terminal-text); font-size: 0.85rem; line-height: 1.6; white-space: pre-wrap; word-break: break-all; }}
-
-    .empty-state {{ text-align: center; padding: 48px 24px; color: var(--text-muted); border: 1px dashed var(--border-focus); border-radius: var(--radius); background: var(--surface-sunken); font-size: 0.95rem; font-weight: 500; }}
-    .mini {{ font-size: 0.8rem; }}
+    .copied {{ background: rgba(39,201,63,0.16) !important; border-color: rgba(39,201,63,0.28) !important; color: #d1fae5 !important; }}
   </style>
 </head>
-<body>
-  <header class="app-header">
-    <div class="header-logo">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent);"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-      <span>TaskCaptain <span style="font-weight: 500; color: var(--text-muted);">Workspace</span></span>
-    </div>
-    <div class="header-actions">
-      {lang_switch}
-      <button class="btn btn-secondary btn-icon" type="button" onclick="toggleTheme()" title="Toggle Light/Dark Theme" style="border-radius: 999px;">
-        <svg id="theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-        <svg id="theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-      </button>
+<body class="bg-slate-50 text-slate-900 dark:bg-darkbg dark:text-slate-100 transition-colors duration-200">
+  <header class="sticky top-0 z-40 w-full backdrop-blur-md bg-white/80 dark:bg-darkcard/80 border-b border-slate-200 dark:border-zinc-800 transition-colors">
+    <div class="max-w-[1460px] mx-auto px-6 h-16 flex items-center justify-between">
+      <a href="/?lang={html.escape(lang)}" class="flex items-center gap-3 font-bold text-lg cursor-pointer hover:opacity-80 transition">
+        <svg class="w-6 h-6 text-brand-600 dark:text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        <span>TaskCaptain <span class="font-medium text-slate-500 dark:text-zinc-400">Workspace</span></span>
+      </a>
+      <div class="flex items-center gap-4">
+        {lang_switch}
+        <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-400 transition" title="Toggle Light/Dark Theme">
+          <svg id="icon-sun" class="w-5 h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <svg id="icon-moon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+      </div>
     </div>
   </header>
 
-  <div class="container">{body}</div>
+  <main class="max-w-[1460px] mx-auto px-6 py-8">
+    {body}
+  </main>
 
   <script>
     function applyTheme(theme) {{
       const root = document.documentElement;
-      const sun = document.getElementById('theme-icon-sun');
-      const moon = document.getElementById('theme-icon-moon');
-      root.setAttribute('data-theme', theme);
-      if (sun) sun.style.display = theme === 'light' ? 'block' : 'none';
-      if (moon) moon.style.display = theme === 'dark' ? 'block' : 'none';
+      const sun = document.getElementById('icon-sun');
+      const moon = document.getElementById('icon-moon');
+      if (theme === 'dark') {{
+        root.classList.add('dark'); root.classList.remove('light');
+        if(sun) sun.classList.remove('hidden');
+        if(moon) moon.classList.add('hidden');
+      }} else {{
+        root.classList.add('light'); root.classList.remove('dark');
+        if(sun) sun.classList.add('hidden');
+        if(moon) moon.classList.remove('hidden');
+      }}
+      localStorage.setItem('taskcaptain-theme', theme);
     }}
     function toggleTheme() {{
-      const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      applyTheme(next);
-      localStorage.setItem('claw-theme', next);
+      const isDark = document.documentElement.classList.contains('dark');
+      applyTheme(isDark ? 'light' : 'dark');
     }}
     (function() {{
-      const saved = localStorage.getItem('claw-theme');
-      applyTheme(saved || 'light');
+      const saved = localStorage.getItem('taskcaptain-theme') || 'light';
+      applyTheme(saved);
     }})();
     function toggleAllCheckboxes(source) {{
       document.querySelectorAll('.item-checkbox:not([disabled])').forEach(cb => cb.checked = source.checked);
@@ -1471,24 +1239,84 @@ def page_template(title: str, body: str, lang: str, path: str = '/') -> bytes:
 
 def render_dialogue(items: list[dict], empty_text: str) -> str:
     if not items:
-        return f'<div class="empty-state">{html.escape(empty_text)}</div>'
+        return f"<div class='flex-1 flex items-center justify-center p-8'><div class=\"text-center p-6 border border-dashed border-slate-300 dark:border-zinc-700 rounded-xl text-slate-500 dark:text-zinc-400 text-sm\">{html.escape(empty_text)}</div></div>"
     rows = []
     for x in items:
         role = x.get('role', '')
         is_user = role == 'user'
-        bubble_class = 'bubble-user' if is_user else 'bubble-bot'
-        role_class = 'role-user' if role == 'user' else ('role-claw' if role == 'claw' else 'role-codex')
-        role_display = 'AGENT' if role == 'claw' else role.upper()
+        if is_user:
+            bubble_class = 'chat-bubble-user w-[85%] ml-auto bg-brand-50 border border-brand-100 dark:bg-brand-900/20 dark:border-brand-800/50 p-3.5 rounded-2xl shadow-sm'
+            role_class = 'text-brand-600 dark:text-brand-400'
+            role_display = 'USER'
+        else:
+            bubble_class = 'chat-bubble-bot w-[85%] bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-3.5 rounded-2xl shadow-sm'
+            role_class = 'text-emerald-600 dark:text-emerald-400' if role == 'claw' else 'text-slate-500 dark:text-zinc-400'
+            role_display = 'AGENT' if role == 'claw' else role.upper()
+            if role == 'codex':
+                bubble_class = 'chat-bubble-user w-[90%] ml-auto bg-slate-100 border border-slate-200 dark:bg-zinc-800 dark:border-zinc-700 p-3.5 rounded-2xl shadow-sm text-slate-700 dark:text-slate-300'
+
+        header_content = ""
+        if role == 'claw':
+            header_content = f"<span class='text-xs font-bold {role_class} tracking-wider'>{html.escape(role_display)}</span><span class='text-[10px] font-mono text-slate-400'>{html.escape(x.get('ts', ''))}</span>"
+        else:
+            header_content = f"<span class='text-[10px] font-mono text-slate-400'>{html.escape(x.get('ts', ''))}</span><span class='text-xs font-bold {role_class} tracking-wider'>{html.escape(role_display)}</span>"
+
         rows.append(f"""
-        <div class='chat-bubble {bubble_class}'>
-          <div class='bubble-header'>
-            <span class='{role_class}'>{html.escape(role_display)}</span>
-            <span class='text-muted mono'>{html.escape(x.get('ts', ''))}</span>
+        <div class='{bubble_class} mb-4'>
+          <div class='flex justify-between items-end mb-2'>
+            {header_content}
           </div>
-          <div class='mono convo-text'>{html.escape(x.get('text', ''))}</div>
+          <div class='text-sm font-mono leading-relaxed break-words whitespace-pre-wrap'>{html.escape(x.get('text', ''))}</div>
         </div>
         """)
     return ''.join(rows)
+
+
+def badge_class_for(status: str) -> str:
+    if status == 'running':
+        return 'badge-running'
+    if status in {'delivered', 'passed'}:
+        return 'badge-delivered'
+    if status == 'failed':
+        return 'badge-failed'
+    if status == 'stopped':
+        return 'badge-stopped'
+    return 'badge-idle'
+
+
+def render_checks_html(checks: dict, lang: str) -> str:
+    return ''.join(
+        f"<tr class='border-b border-slate-100 dark:border-zinc-800 last:border-0'><td class='py-3 pr-4 font-semibold text-sm'>{html.escape(k)}</td><td class='py-3 px-4'><span class='inline-flex items-center px-2 py-0.5 rounded text-xs font-bold {'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' if v.get('ok') else 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'}'>{'Pass' if v.get('ok') else 'Fail'}</span></td><td class='py-3 pl-4 font-mono text-xs text-slate-500 break-all'>{html.escape(str(v.get('detail', '')))}</td></tr>"
+        for k, v in checks.items()
+    ) or f"<tr><td colspan='3' class='py-4 text-slate-500 text-center text-sm'>{html.escape(t(lang, 'not_run'))}</td></tr>"
+
+
+def build_product_live_payload(pid: str, lang: str) -> dict:
+    d = product_dir(pid)
+    cfg = load_product_config(pid)
+    st = load_product_state(pid)
+    self_test = st.get('selfTest', {})
+    checks = self_test.get('checks', {})
+    user_claw = st.get('conversations', {}).get('userClaw', [])[-30:]
+    claw_codex = st.get('conversations', {}).get('clawCodex', [])[-30:]
+    status = st.get('status', 'idle')
+    st_status = self_test.get('status', 'not-run')
+    is_running = status == 'running' and bool(active_run_info(pid))
+    return {
+        'status': status,
+        'statusLabel': t(lang, status) if status in I18N[lang] else status,
+        'statusClass': badge_class_for(status),
+        'selfTestStatus': st_status,
+        'selfTestStatusLabel': t(lang, st_status) if st_status in I18N[lang] else st_status,
+        'selfTestStatusClass': badge_class_for(st_status),
+        'selfTestRunning': st_status == 'running',
+        'isRunning': is_running,
+        'userClawHtml': render_dialogue(user_claw, t(lang, 'no_user_claw')),
+        'clawCodexHtml': render_dialogue(claw_codex, t(lang, 'no_claw_codex')),
+        'checksHtml': render_checks_html(checks, lang),
+        'clawLog': (d / 'logs' / 'claw.log').read_text(encoding='utf-8') if (d / 'logs' / 'claw.log').exists() else t(lang, 'no_logs'),
+        'codexLog': (d / 'logs' / 'codex.log').read_text(encoding='utf-8') if (d / 'logs' / 'codex.log').exists() else t(lang, 'no_logs'),
+    }
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -1504,6 +1332,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({'products': list_products()})
         if parsed.path == '/api/profiles':
             return self.send_json({'profiles': list_claw_profiles()})
+        if parsed.path.startswith('/api/product-live/'):
+            pid = parsed.path.split('/')[-1]
+            return self.send_json(build_product_live_payload(pid, lang))
         self.send_error(404)
 
     def do_POST(self):
@@ -1578,17 +1409,6 @@ class Handler(BaseHTTPRequestHandler):
         profiles = list_claw_profiles()
         default_profile = load_claw_profile(DEFAULT_PROFILE_ID)
 
-        def status_class(status: str) -> str:
-            if status == 'running':
-                return 'badge-running'
-            if status in {'delivered', 'passed'}:
-                return 'badge-delivered'
-            if status == 'failed':
-                return 'badge-failed'
-            if status == 'stopped':
-                return 'badge-stopped'
-            return 'badge-idle'
-
         product_rows = []
         for item in items:
             cfg = item['config']
@@ -1599,18 +1419,20 @@ class Handler(BaseHTTPRequestHandler):
             is_running = status == 'running' and bool(active_run_info(pid))
             goal_text = cfg.get('goal', '') or '—'
             product_rows.append(f"""
-            <label class='product-row' onclick="if(event.target.type!=='checkbox')window.location='/product/{pid}?lang={lang}'">
-              <input class='item-checkbox' type='checkbox' name='productIds' value='{html.escape(pid)}' {'disabled' if is_running else ''} onclick='event.stopPropagation()' />
-              <div class='product-content'>
-                <div class='product-header'>
+            <label class='group flex gap-4 p-5 hover:bg-slate-50 dark:hover:bg-zinc-800/40 transition cursor-pointer' onclick="if(event.target.type!=='checkbox')window.location='/product/{pid}?lang={lang}'">
+              <input class='mt-1 rounded border-slate-300 text-brand-600 focus:ring-brand-500 bg-white dark:bg-zinc-900 item-checkbox' type='checkbox' name='productIds' value='{html.escape(pid)}' {'disabled' if is_running else ''} onclick='event.stopPropagation()' />
+              <div class='flex-1 min-w-0'>
+                <div class='flex justify-between items-start gap-4 mb-1'>
                   <div>
-                    <div class='product-title'>{html.escape(cfg.get('name', t(lang, 'untitled')))}</div>
-                    <div class='mini muted' style='margin-top: 2px;'>{html.escape(t(lang, 'profile_label'))}: {html.escape(claw_eff.get('profileName', '-'))}</div>
+                    <h3 class='text-lg font-semibold text-slate-900 dark:text-slate-100 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition'>{html.escape(cfg.get('name', t(lang, 'untitled')))}</h3>
+                    <p class='text-xs text-slate-500 mt-0.5'>{html.escape(t(lang, 'profile_label'))}: {html.escape(claw_eff.get('profileName', '-'))}</p>
                   </div>
-                  <span class='badge {status_class(status)}'>{html.escape(t(lang, status) if status in I18N[lang] else status)}</span>
+                  <span class='badge {badge_class_for(status)}'>
+                    {html.escape(t(lang, status) if status in I18N[lang] else status)}
+                  </span>
                 </div>
-                <div class='product-desc'>{html.escape(goal_text)}</div>
-                <div class='product-meta'>
+                <p class='text-sm text-slate-600 dark:text-zinc-400 line-clamp-2 leading-relaxed mb-3'>{html.escape(goal_text)}</p>
+                <div class='flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-500 dark:text-zinc-500'>
                   <span>{html.escape(t(lang, 'created_at'))}: {html.escape(cfg.get('createdAt', ''))}</span>
                   <span>Agent: {html.escape(claw_eff.get('model', '-'))}</span>
                   <span>Codex: {html.escape(cfg.get('codex', {}).get('model', '-'))}</span>
@@ -1621,405 +1443,449 @@ class Handler(BaseHTTPRequestHandler):
 
         profiles_html = ''.join(
             f"""
-            <div class='card' style='transition: transform 0.2s ease; cursor: default;'>
-              <div class='card-body' style='padding:18px 20px;'>
-                <div style='display:flex; justify-content:space-between; gap:16px; align-items:flex-start; flex-wrap:wrap;'>
-                  <div style='flex: 1; min-width: 0;'>
-                    <div style='font-weight:700; margin-bottom:6px; color: var(--text-main); font-size: 1rem;'>{html.escape(p.get('name', ''))}</div>
-                    <div class='text-muted mini' style='line-height: 1.5;'>{html.escape(p.get('description', ''))}</div>
-                  </div>
-                  <div class='text-muted mini' style='text-align: right; background: var(--surface-sunken); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border);'>
-                    <b>{html.escape(p.get('model', ''))}</b><br/>
-                    Thinking: {html.escape(p.get('thinking', ''))}
-                  </div>
+            <div class='bg-white dark:bg-darkcard border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition'>
+              <div class='flex justify-between items-start gap-4 mb-3'>
+                <h3 class='font-bold text-base'>{html.escape(p.get('name', ''))}</h3>
+                <div class='text-right bg-slate-50 dark:bg-zinc-800/50 px-2 py-1.5 rounded-lg border border-slate-100 dark:border-zinc-700 text-xs'>
+                  <span class='font-semibold block text-slate-700 dark:text-slate-300'>{html.escape(p.get('model', ''))}</span>
+                  <span class='text-slate-400 dark:text-zinc-500'>Thinking: {html.escape(p.get('thinking', ''))}</span>
                 </div>
               </div>
+              <p class='text-sm text-slate-500 dark:text-zinc-400 line-clamp-2'>{html.escape(p.get('description', ''))}</p>
             </div>
             """
             for p in profiles
-        ) or f'<div class="empty-state">{html.escape(t(lang, "no_profiles"))}</div>'
+        ) or f'<div class="col-span-2 text-center py-8 text-slate-500 border border-dashed border-slate-300 dark:border-zinc-700 rounded-2xl">{html.escape(t(lang, "no_profiles"))}</div>'
 
         profile_options = ''.join(
             f"<option value='{html.escape(p.get('id', ''))}'>{html.escape(p.get('name', ''))}</option>" for p in profiles
         )
 
+        input_cls = "w-full bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
+        label_cls = "block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300"
+        btn_primary_cls = "w-full bg-slate-900 hover:bg-black dark:bg-brand-600 dark:hover:bg-brand-500 text-white font-medium py-2.5 rounded-xl shadow-sm transition active:scale-[0.98]"
+        btn_secondary_cls = "w-full px-4 py-2 font-semibold text-sm bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl shadow-sm hover:bg-slate-50 dark:hover:bg-zinc-700 transition active:scale-95"
+
         body = f"""
-<div class='view-header'>
-  <div>
-    <h1>{html.escape(t(lang, 'app_title'))}</h1>
-    <div class='page-subtitle'>{html.escape(t(lang, 'app_subtitle'))}</div>
-  </div>
+<div class='mb-8'>
+  <h1 class='text-3xl font-bold tracking-tight mb-2'>{html.escape(t(lang, 'app_title'))}</h1>
+  <p class='text-slate-500 dark:text-zinc-400'>{html.escape(t(lang, 'app_subtitle'))}</p>
 </div>
 
-<div class='dashboard-grid'>
-  <!-- 左侧/主要内容区：列表 -->
-  <div class='main-column'>
-    <div class='view-header' style='margin-bottom:16px;'>
-      <div>
-        <h2>{html.escape(t(lang, 'active_products'))}</h2>
-      </div>
-    </div>
-
-    <form method='post' action='/bulk-delete' onsubmit='return confirm({json.dumps(t(lang, 'bulk_delete_confirm'))});'>
-      <input type='hidden' name='lang' value='{html.escape(lang)}' />
-      <div class='list-toolbar'>
-        <div class='toolbar-left'>
-          <label class='checkbox-line' style='margin:0;'>
-            <input type='checkbox' onchange='toggleAllCheckboxes(this)' />
-            <span>{html.escape(t(lang, 'select_for_bulk_delete'))}</span>
-          </label>
-        </div>
-        <div class='toolbar-right'>
-          <span class='text-muted mini'>{html.escape(t(lang, 'running_skip_note'))}</span>
-          <button type='submit' class='btn btn-danger'>{html.escape(t(lang, 'bulk_delete'))}</button>
-        </div>
-      </div>
-      {f"<div class='product-list'>{''.join(product_rows)}</div>" if product_rows else f"<div class='empty-state'>{html.escape(t(lang, 'no_products'))}</div>"}
-    </form>
-
-    <div class='view-header' style='margin-top: 48px; margin-bottom:16px;'>
-      <div>
-        <h2>{html.escape(t(lang, 'reusable_claw_profiles'))}</h2>
-      </div>
-    </div>
+<div class='grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-8 items-start'>
+  <div class='space-y-10'>
     
-    <div class='text-muted' style='margin-bottom:16px; font-size: 0.95rem; max-width: 800px;'>
-      {html.escape(t(lang, 'claw_identity_body'))}
-    </div>
-    <div style='display:grid; gap:16px;'>{profiles_html}</div>
+    <section>
+      <div class='flex items-center justify-between mb-4'>
+        <h2 class='text-xl font-bold flex items-center gap-2'>{html.escape(t(lang, 'active_products'))}</h2>
+      </div>
+      
+      <form method='post' action='/bulk-delete' onsubmit='return confirm({json.dumps(t(lang, 'bulk_delete_confirm'))});'>
+        <input type='hidden' name='lang' value='{html.escape(lang)}' />
+        <div class='bg-white dark:bg-darkcard border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden'>
+          <div class='bg-slate-50/50 dark:bg-zinc-800/20 px-4 py-3 border-b border-slate-200 dark:border-zinc-800 flex justify-between items-center'>
+            <label class='flex items-center gap-2 text-sm font-medium cursor-pointer'>
+              <input type='checkbox' class='rounded border-slate-300 text-brand-600 focus:ring-brand-500 bg-white dark:bg-zinc-900' onchange='toggleAllCheckboxes(this)'>
+              <span>{html.escape(t(lang, 'select_for_bulk_delete'))}</span>
+            </label>
+            <div class='flex items-center gap-3'>
+              <span class='text-xs text-slate-400'>{html.escape(t(lang, 'running_skip_note'))}</span>
+              <button type='submit' class='text-xs font-semibold px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 rounded-lg transition'>{html.escape(t(lang, 'bulk_delete'))}</button>
+            </div>
+          </div>
+          <div class='divide-y divide-slate-100 dark:divide-zinc-800'>
+            {''.join(product_rows) if product_rows else f"<div class='p-8 text-center text-slate-500'>{html.escape(t(lang, 'no_products'))}</div>"}
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section>
+      <div class='flex items-center justify-between mb-4'>
+        <h2 class='text-xl font-bold'>{html.escape(t(lang, 'reusable_claw_profiles'))}</h2>
+      </div>
+      <p class='text-sm text-slate-500 dark:text-zinc-400 mb-4 max-w-3xl leading-relaxed'>{html.escape(t(lang, 'claw_identity_body'))}</p>
+      <div class='grid grid-cols-1 md:grid-cols-2 gap-4'>
+        {profiles_html}
+      </div>
+    </section>
+
   </div>
 
-  <!-- 右侧/辅助操作区：创建表单 -->
-  <div class='sticky-panel'>
-    <div class='card sidebar-card'>
-      <div class='card-header'><div class='card-title'>✦ {html.escape(t(lang, 'create_product'))}</div></div>
-      <div class='card-body'>
-        <form method='post' action='/create'>
+  <div class='xl:sticky xl:top-24 space-y-6'>
+    
+    <div class='bg-white dark:bg-darkcard border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden flex flex-col'>
+      <div class='bg-slate-50/80 dark:bg-zinc-800/40 px-5 py-4 border-b border-slate-200 dark:border-zinc-800'>
+        <h3 class='font-bold text-[0.95rem] flex items-center gap-2 tracking-wide uppercase'>
+          <span class='text-brand-500'>✦</span> {html.escape(t(lang, 'create_product'))}
+        </h3>
+      </div>
+      <div class='p-5 flex-1'>
+        <form method='post' action='/create' class='space-y-4'>
           <input type='hidden' name='lang' value='{html.escape(lang)}' />
-
-          <label>{html.escape(t(lang, 'product_name'))}</label>
-          <input name='name' placeholder='e.g. My Awesome App' />
-
-          <label>{html.escape(t(lang, 'goal'))}</label>
-          <textarea name='goal' rows='3' placeholder='{html.escape(t(lang, 'goal_placeholder'))}'></textarea>
-
-          <label>{html.escape(t(lang, 'product_folder'))}</label>
-          <input name='productFolder' value='{html.escape(DEFAULT_PRODUCT_FOLDER)}' />
-
-          <div class='settings-group'>
-            <div class='settings-group-title'>{html.escape(t(lang, 'claw_setting'))}</div>
-            <label>{html.escape(t(lang, 'claw_profile_select'))}</label>
-            <select name='clawProfileId'>{profile_options}</select>
-
-            <div class='form-row'>
-              <div>
-                <label>{html.escape(t(lang, 'claw_endpoint'))}</label>
-                <input name='clawEndpoint' value='{html.escape(DEFAULT_AGENT_ENDPOINT)}' />
-              </div>
-              <div>
-                <label>{html.escape(t(lang, 'claw_api_key'))}</label>
-                <input type='password' name='clawApiKey' value='' />
-              </div>
+          <div>
+            <label class='{label_cls} text-sm'>{html.escape(t(lang, 'product_name'))}</label>
+            <input name='name' placeholder='e.g. My Awesome App' class='{input_cls} py-2.5' />
+          </div>
+          <div>
+            <label class='{label_cls} text-sm'>{html.escape(t(lang, 'goal'))}</label>
+            <textarea name='goal' rows='2' placeholder='{html.escape(t(lang, 'goal_placeholder'))}' class='{input_cls} py-2.5 resize-y'></textarea>
+          </div>
+          <div>
+            <label class='{label_cls} text-sm'>{html.escape(t(lang, 'product_folder'))}</label>
+            <input name='productFolder' value='{html.escape(DEFAULT_PRODUCT_FOLDER)}' class='{input_cls}' />
+          </div>
+          
+          <div class='bg-slate-50/50 dark:bg-zinc-800/30 border border-slate-200 dark:border-zinc-800 rounded-xl p-4 space-y-3'>
+            <h4 class='text-xs font-bold text-slate-400 uppercase tracking-wider'>{html.escape(t(lang, 'claw_setting'))}</h4>
+            <div>
+              <label class='{label_cls}'>{html.escape(t(lang, 'claw_profile_select'))}</label>
+              <select name='clawProfileId' class='w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500'>{profile_options}</select>
             </div>
-
-            <div class='form-row'>
-              <div>
-                <label>{html.escape(t(lang, 'claw_model'))}</label>
-                <input name='clawModel' placeholder='{html.escape(default_profile.get('model', ''))}' />
+            <details class='group'>
+              <summary class='text-xs font-medium text-brand-600 dark:text-brand-400 cursor-pointer hover:underline outline-none select-none'>+ 展开高级配置 (API, Model, Soul...)</summary>
+              <div class='pt-3 space-y-3'>
+                <div class='grid grid-cols-2 gap-3'>
+                  <div><label class='{label_cls}'>{html.escape(t(lang, 'claw_endpoint'))}</label><input name='clawEndpoint' value='{html.escape(DEFAULT_AGENT_ENDPOINT)}' class='{input_cls}' /></div>
+                  <div><label class='{label_cls}'>{html.escape(t(lang, 'claw_api_key'))}</label><input type='password' name='clawApiKey' class='{input_cls}' /></div>
+                </div>
+                <div class='grid grid-cols-2 gap-3'>
+                  <div><label class='{label_cls}'>{html.escape(t(lang, 'claw_model'))}</label><input name='clawModel' placeholder='{html.escape(default_profile.get('model', ''))}' class='{input_cls}' /></div>
+                  <div><label class='{label_cls}'>{html.escape(t(lang, 'claw_thinking'))}</label><input name='clawThinking' placeholder='{html.escape(default_profile.get('thinking', ''))}' class='{input_cls}' /></div>
+                </div>
+                <div><label class='{label_cls}'>{html.escape(t(lang, 'claw_soul'))}</label><textarea name='clawSoul' rows='2' placeholder='{html.escape(t(lang, 'profile_soul_placeholder'))}' class='{input_cls}'></textarea></div>
+                <div><label class='{label_cls}'>{html.escape(t(lang, 'claw_skills'))}</label><textarea name='clawSkills' rows='2' placeholder='{html.escape(t(lang, 'profile_skills_placeholder'))}' class='{input_cls}'></textarea></div>
               </div>
-              <div>
-                <label>{html.escape(t(lang, 'claw_thinking'))}</label>
-                <input name='clawThinking' placeholder='{html.escape(default_profile.get('thinking', ''))}' />
-              </div>
-            </div>
-
-            <label>{html.escape(t(lang, 'claw_soul'))}</label>
-            <textarea name='clawSoul' rows='3' placeholder='{html.escape(t(lang, 'profile_soul_placeholder'))}'></textarea>
-
-            <label>{html.escape(t(lang, 'claw_skills'))}</label>
-            <textarea name='clawSkills' rows='3' placeholder='{html.escape(t(lang, 'profile_skills_placeholder'))}'></textarea>
+            </details>
           </div>
 
-          <div class='settings-group' style='margin-bottom:24px;'>
-            <div class='settings-group-title'>{html.escape(t(lang, 'codex_setting'))}</div>
-            <div class='form-row'>
-              <div>
-                <label>{html.escape(t(lang, 'codex_endpoint'))}</label>
-                <input name='codexEndpoint' value='{html.escape(DEFAULT_CODEX_ENDPOINT)}' />
-              </div>
-              <div>
-                <label>{html.escape(t(lang, 'codex_api_key'))}</label>
-                <input type='password' name='codexApiKey' value='' />
-              </div>
+          <div class='bg-slate-50/50 dark:bg-zinc-800/30 border border-slate-200 dark:border-zinc-800 rounded-xl p-4 space-y-3'>
+            <h4 class='text-xs font-bold text-slate-400 uppercase tracking-wider'>{html.escape(t(lang, 'codex_setting'))}</h4>
+            <div class='grid grid-cols-2 gap-3'>
+              <div><label class='{label_cls}'>{html.escape(t(lang, 'codex_endpoint'))}</label><input name='codexEndpoint' value='{html.escape(DEFAULT_CODEX_ENDPOINT)}' class='{input_cls}' /></div>
+              <div><label class='{label_cls}'>{html.escape(t(lang, 'codex_api_key'))}</label><input type='password' name='codexApiKey' class='{input_cls}' /></div>
             </div>
-
-            <div class='form-row'>
-              <div>
-                <label>{html.escape(t(lang, 'codex_model'))}</label>
-                <input name='codexModel' value='gpt-5.4-medium' />
-              </div>
-              <div>
-                <label>{html.escape(t(lang, 'codex_thinking'))}</label>
-                <input name='codexThinking' value='medium' />
-              </div>
+            <div class='grid grid-cols-2 gap-3'>
+              <div><label class='{label_cls}'>{html.escape(t(lang, 'codex_model'))}</label><input name='codexModel' value='gpt-5.4-medium' class='{input_cls}' /></div>
+              <div><label class='{label_cls}'>{html.escape(t(lang, 'codex_thinking'))}</label><input name='codexThinking' value='medium' class='{input_cls}' /></div>
             </div>
-
-            <label class='checkbox-line'>
-              <input type='checkbox' name='codexPlanMode' checked />
-              <span>{html.escape(t(lang, 'enable_plan'))}</span>
-            </label>
-            <label class='checkbox-line' style='margin-bottom:0;'>
-              <input type='checkbox' name='codexMaxPermission' checked />
-              <span>{html.escape(t(lang, 'enable_max_permission'))}</span>
-            </label>
+            <div class='flex gap-4 mt-2'>
+              <label class='flex items-center gap-2 text-sm font-medium cursor-pointer'>
+                <input type='checkbox' name='codexPlanMode' checked class='rounded border-slate-300 text-brand-600 focus:ring-brand-500 bg-white dark:bg-zinc-900'>
+                <span>{html.escape(t(lang, 'enable_plan'))}</span>
+              </label>
+              <label class='flex items-center gap-2 text-sm font-medium cursor-pointer'>
+                <input type='checkbox' name='codexMaxPermission' checked class='rounded border-slate-300 text-brand-600 focus:ring-brand-500 bg-white dark:bg-zinc-900'>
+                <span>{html.escape(t(lang, 'enable_max_permission'))}</span>
+              </label>
+            </div>
           </div>
 
-          <button type='submit' class='btn btn-primary' style='width:100%; height: 44px; font-size: 1rem;'>{html.escape(t(lang, 'create_button'))}</button>
+          <button type='submit' class='{btn_primary_cls}'>{html.escape(t(lang, 'create_button'))}</button>
         </form>
       </div>
     </div>
 
-    <div class='card sidebar-card'>
-      <div class='card-header'><div class='card-title'>+ {html.escape(t(lang, 'create_profile'))}</div></div>
-      <div class='card-body'>
-        <form method='post' action='/profiles/create'>
+    <div class='bg-white dark:bg-darkcard border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden flex flex-col'>
+      <div class='bg-slate-50/80 dark:bg-zinc-800/40 px-5 py-4 border-b border-slate-200 dark:border-zinc-800'>
+        <h3 class='font-bold text-[0.95rem] flex items-center gap-2 tracking-wide uppercase'>
+          <span class='text-slate-400'>+</span> {html.escape(t(lang, 'create_profile'))}
+        </h3>
+      </div>
+      <div class='p-5 flex-1'>
+        <form method='post' action='/profiles/create' class='space-y-4'>
           <input type='hidden' name='lang' value='{html.escape(lang)}' />
-          <label>{html.escape(t(lang, 'profile_name'))}</label>
-          <input name='profileName' placeholder='e.g. Sandrone Network Auditor' />
-
-          <label>{html.escape(t(lang, 'profile_description'))}</label>
-          <input name='profileDescription' placeholder='{html.escape(t(lang, 'profile_desc_placeholder'))}' />
-
-          <div class='form-row'>
-            <div>
-              <label>{html.escape(t(lang, 'profile_model_hint'))}</label>
-              <input name='profileModel' value='{html.escape(default_profile.get('model', ''))}' />
-            </div>
-            <div>
-              <label>{html.escape(t(lang, 'profile_thinking_hint'))}</label>
-              <input name='profileThinking' value='{html.escape(default_profile.get('thinking', ''))}' />
-            </div>
+          <div><label class='{label_cls}'>{html.escape(t(lang, 'profile_name'))}</label><input name='profileName' placeholder='e.g. Sandrone Network Auditor' class='{input_cls}' /></div>
+          <div><label class='{label_cls}'>{html.escape(t(lang, 'profile_description'))}</label><input name='profileDescription' placeholder='{html.escape(t(lang, 'profile_desc_placeholder'))}' class='{input_cls}' /></div>
+          <div class='grid grid-cols-2 gap-3'>
+            <div><label class='{label_cls}'>{html.escape(t(lang, 'profile_model_hint'))}</label><input name='profileModel' value='{html.escape(default_profile.get('model', ''))}' class='{input_cls}' /></div>
+            <div><label class='{label_cls}'>{html.escape(t(lang, 'profile_thinking_hint'))}</label><input name='profileThinking' value='{html.escape(default_profile.get('thinking', ''))}' class='{input_cls}' /></div>
           </div>
-
-          <label>{html.escape(t(lang, 'claw_soul'))}</label>
-          <textarea name='profileSoul' rows='3'>{html.escape(default_profile.get('soul', ''))}</textarea>
-
-          <label>{html.escape(t(lang, 'claw_skills'))}</label>
-          <textarea name='profileSkills' rows='3'>{html.escape(default_profile.get('skills', ''))}</textarea>
-
-          <button type='submit' class='btn btn-secondary' style='width:100%; height: 44px;'>{html.escape(t(lang, 'create_profile_button'))}</button>
+          <div><label class='{label_cls}'>{html.escape(t(lang, 'claw_soul'))}</label><textarea name='profileSoul' rows='2' class='{input_cls}'>{html.escape(default_profile.get('soul', ''))}</textarea></div>
+          <div><label class='{label_cls}'>{html.escape(t(lang, 'claw_skills'))}</label><textarea name='profileSkills' rows='2' class='{input_cls}'>{html.escape(default_profile.get('skills', ''))}</textarea></div>
+          <button type='submit' class='{btn_secondary_cls} mt-2'>{html.escape(t(lang, 'create_profile_button'))}</button>
         </form>
       </div>
     </div>
+
   </div>
 </div>
 """
         self.send_html(page_template(t(lang, 'app_title'), body, lang, '/'))
 
     def render_product(self, pid: str, lang: str):
-        d = product_dir(pid)
         cfg = load_product_config(pid)
         st = load_product_state(pid)
         claw_eff = effective_claw_config(cfg)
-        claw_log = html.escape((d / 'logs' / 'claw.log').read_text(encoding='utf-8') if (d / 'logs' / 'claw.log').exists() else t(lang, 'no_logs'))
-        codex_log = html.escape((d / 'logs' / 'codex.log').read_text(encoding='utf-8') if (d / 'logs' / 'codex.log').exists() else t(lang, 'no_logs'))
-        self_test = st.get('selfTest', {})
-        checks = self_test.get('checks', {})
-        user_claw = st.get('conversations', {}).get('userClaw', [])[-30:]
-        claw_codex = st.get('conversations', {}).get('clawCodex', [])[-30:]
-        user_claw_html = render_dialogue(user_claw, t(lang, 'no_user_claw'))
-        claw_codex_html = render_dialogue(claw_codex, t(lang, 'no_claw_codex'))
-
-        def badge_class(status: str) -> str:
-            if status == 'running':
-                return 'badge-running'
-            if status in {'delivered', 'passed'}:
-                return 'badge-delivered'
-            if status == 'failed':
-                return 'badge-failed'
-            if status == 'stopped':
-                return 'badge-stopped'
-            return 'badge-idle'
-
-        checks_html = ''.join(
-            f"<tr><td><div style='font-weight:700;'>{html.escape(k)}</div></td><td><span class='badge {'badge-delivered' if v.get('ok') else 'badge-failed'}'>{'Pass' if v.get('ok') else 'Fail'}</span></td><td class='mono text-muted'>{html.escape(str(v.get('detail', '')))}</td></tr>"
-            for k, v in checks.items()
-        ) or f"<tr><td colspan='3' class='text-muted' style='text-align:center;'>{html.escape(t(lang, 'not_run'))}</td></tr>"
-
-        status = st.get('status', 'idle')
-        st_status = self_test.get('status', 'not-run')
-        is_running = status == 'running' and bool(active_run_info(pid))
+        live = build_product_live_payload(pid, lang)
         profile = load_claw_profile(claw_eff.get('profileId'))
 
+        input_cls = "w-full bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
+        label_cls = "block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300"
+        btn_secondary_cls = "px-4 py-2 font-semibold text-sm bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl shadow-sm hover:bg-slate-50 dark:hover:bg-zinc-700 transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+
         body = f"""
-<a href='/?lang={lang}' class='back-link'>
-  <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><line x1='19' y1='12' x2='5' y2='12'></line><polyline points='12 19 5 12 12 5'></polyline></svg>
+<a href='/?lang={lang}' class='inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-slate-100 mb-6 transition'>
+  <svg class='w-4 h-4' fill='none' viewBox='0 0 24 24' stroke='currentColor' stroke-width='2'><path stroke-linecap='round' stroke-linejoin='round' d='M10 19l-7-7m0 0l7-7m-7 7h18' /></svg>
   {html.escape(t(lang, 'back'))}
 </a>
 
-<div class='view-header'>
+<div class='flex flex-wrap items-start justify-between gap-6 mb-8'>
   <div>
-    <h1>
+    <h1 class='text-3xl font-bold flex items-center flex-wrap gap-3 mb-2'>
       {html.escape(cfg.get('name', t(lang, 'untitled')))}
-      <span class='badge {badge_class(status)}'>{html.escape(t(lang, status) if status in I18N[lang] else status)}</span>
-      <span class='badge {badge_class(st_status)}'>{html.escape(t(lang, 'self_test'))}: {html.escape(t(lang, st_status) if st_status in I18N[lang] else st_status)}</span>
+      <span class='badge {live['statusClass']}' id='product-status-badge'>{html.escape(live['statusLabel'])}</span>
+      <span class='badge {live['selfTestStatusClass']}' id='self-test-status-badge' data-label-prefix='{html.escape(t(lang, 'self_test'))}: '>{html.escape(t(lang, 'self_test'))}: {html.escape(live['selfTestStatusLabel'])}</span>
     </h1>
-    <div class='page-subtitle mono'>ID: {html.escape(pid)} · Dir: {html.escape(cfg.get('productFolder', ''))}</div>
+    <div class='font-mono text-sm text-slate-500 dark:text-zinc-400 flex gap-4 flex-wrap'>
+      <span>ID: {html.escape(pid)}</span>
+      <span>Dir: {html.escape(cfg.get('productFolder', ''))}</span>
+    </div>
   </div>
-
-  <div class='view-header-actions'>
-    <form method='post' action='/selftest/{html.escape(pid)}' style='margin:0;'>
+  
+  <div class='flex flex-wrap items-center gap-3'>
+    <form method='post' action='/selftest/{html.escape(pid)}' class='m-0'>
       <input type='hidden' name='lang' value='{html.escape(lang)}' />
-      <button type='submit' class='btn btn-secondary' {'disabled' if st_status == 'running' else ''}>{html.escape(t(lang, 'run_self_test'))}</button>
+      <button type='submit' class='{btn_secondary_cls}' id='run-self-test-btn' {'disabled' if live['selfTestRunning'] else ''}>{html.escape(t(lang, 'run_self_test'))}</button>
     </form>
-    <form method='post' action='/start/{html.escape(pid)}' style='margin:0;'>
+    <form method='post' action='/start/{html.escape(pid)}' class='m-0'>
       <input type='hidden' name='lang' value='{html.escape(lang)}' />
-      <button type='submit' class='btn btn-primary' {'disabled' if is_running else ''}>{html.escape(t(lang, 'start_continue_run'))}</button>
+      <button type='submit' class='px-4 py-2 font-semibold text-sm bg-slate-900 hover:bg-black dark:bg-brand-600 dark:hover:bg-brand-500 text-white rounded-xl shadow-sm transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed' id='start-run-btn' {'disabled' if live['isRunning'] else ''}>{html.escape(t(lang, 'start_continue_run'))}</button>
     </form>
-    <form method='post' action='/stop/{html.escape(pid)}' style='margin:0;'>
+    <form method='post' action='/stop/{html.escape(pid)}' class='m-0'>
       <input type='hidden' name='lang' value='{html.escape(lang)}' />
-      <button type='submit' class='btn btn-secondary' {'disabled' if not is_running else ''}>{html.escape(t(lang, 'stop_run'))}</button>
+      <button type='submit' class='{btn_secondary_cls}' id='stop-run-btn' {'disabled' if not live['isRunning'] else ''}>{html.escape(t(lang, 'stop_run'))}</button>
     </form>
-    <form method='post' action='/delete/{html.escape(pid)}' style='margin:0;' onsubmit='return confirm({json.dumps(t(lang, 'delete_confirm'))});'>
+    <form method='post' action='/delete/{html.escape(pid)}' class='m-0' onsubmit='return confirm({json.dumps(t(lang, 'delete_confirm'))});'>
       <input type='hidden' name='lang' value='{html.escape(lang)}' />
-      <button type='submit' class='btn btn-danger btn-icon' {'disabled' if is_running else ''}>🗑</button>
+      <button type='submit' class='p-2 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 rounded-xl transition active:scale-95 ml-2 disabled:opacity-50 disabled:cursor-not-allowed' id='delete-product-btn' {'disabled' if live['isRunning'] else ''} title='{html.escape(t(lang, 'delete_product'))}'>
+        <svg class='w-5 h-5' fill='none' viewBox='0 0 24 24' stroke='currentColor' stroke-width='2'><path stroke-linecap='round' stroke-linejoin='round' d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16' /></svg>
+      </button>
     </form>
   </div>
 </div>
 
-<div class='card' style='margin-bottom:24px;'>
-  <div class='card-header'><div class='card-title'>{html.escape(t(lang, 'configuration_details'))}</div></div>
-  <div class='card-body'>
-    <div class='three-col'>
-      <div>
-        <div class='settings-group-title'>{html.escape(t(lang, 'goal'))}</div>
-        <div class='settings-group' style='margin-bottom:0; overflow-wrap:break-word;'>{html.escape(cfg.get('goal', ''))}</div>
-      </div>
-      <div class='settings-group' style='margin-bottom:0;'>
-        <div class='settings-group-title'>{html.escape(t(lang, 'claw_setting'))}</div>
-        <div style='font-size:0.93rem; line-height:1.8;'>
-          <b>{html.escape(t(lang, 'profile_label'))}:</b> {html.escape(claw_eff.get('profileName', ''))}<br/>
-          <b>{html.escape(t(lang, 'model'))}:</b> {html.escape(claw_eff.get('model', ''))} <span class='text-muted'>({html.escape(claw_eff.get('thinking', ''))})</span><br/>
-          <b>{html.escape(t(lang, 'api_key_present'))}:</b> <span class='badge badge-delivered'>{html.escape(t(lang, mask_present(claw_eff.get('apiKey'))))}</span><br/>
-          <b>Endpoint:</b> <span class='mono text-muted'>{html.escape(claw_eff.get('endpoint', ''))}</span>
-        </div>
-      </div>
-      <div class='settings-group' style='margin-bottom:0;'>
-        <div class='settings-group-title'>{html.escape(t(lang, 'codex_setting'))}</div>
-        <div style='font-size:0.93rem; line-height:1.8;'>
-          <b>{html.escape(t(lang, 'model'))}:</b> {html.escape(cfg.get('codex', {}).get('model', ''))} <span class='text-muted'>({html.escape(cfg.get('codex', {}).get('thinking', ''))})</span><br/>
-          <b>{html.escape(t(lang, 'api_key_present'))}:</b> <span class='badge badge-delivered'>{html.escape(t(lang, mask_present(cfg.get('codex', {}).get('apiKey'))))}</span><br/>
-          <b>Endpoint:</b> <span class='mono text-muted'>{html.escape(cfg.get('codex', {}).get('endpoint', ''))}</span><br/>
-          <div style='margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;'>
-            <span class='badge badge-idle'>Plan: {cfg.get('codex', {}).get('planMode')}</span>
-            <span class='badge badge-idle'>MaxPerm: {cfg.get('codex', {}).get('maxPermission')}</span>
-          </div>
-        </div>
-      </div>
+<div class='bg-white dark:bg-darkcard border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-sm mb-6 overflow-hidden'>
+  <div class='bg-slate-50/80 dark:bg-zinc-800/40 px-5 py-4 border-b border-slate-200 dark:border-zinc-800'>
+    <h3 class='font-bold uppercase tracking-wider text-sm'>{html.escape(t(lang, 'configuration_details'))}</h3>
+  </div>
+  <div class='grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100 dark:divide-zinc-800 p-5 gap-6 md:gap-0'>
+    <div class='md:pr-6'>
+      <h4 class='text-xs font-bold text-slate-400 uppercase tracking-wider mb-2'>{html.escape(t(lang, 'goal'))}</h4>
+      <div class='text-sm bg-slate-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-slate-100 dark:border-zinc-800 leading-relaxed whitespace-pre-wrap'>{html.escape(cfg.get('goal', ''))}</div>
+    </div>
+    <div class='md:px-6'>
+      <h4 class='text-xs font-bold text-slate-400 uppercase tracking-wider mb-2'>{html.escape(t(lang, 'claw_setting'))}</h4>
+      <ul class='text-sm space-y-2'>
+        <li><b class='text-slate-700 dark:text-slate-300'>{html.escape(t(lang, 'profile_label'))}:</b> {html.escape(claw_eff.get('profileName', ''))}</li>
+        <li><b class='text-slate-700 dark:text-slate-300'>{html.escape(t(lang, 'model'))}:</b> {html.escape(claw_eff.get('model', ''))} <span class='text-slate-400'>({html.escape(claw_eff.get('thinking', ''))})</span></li>
+        <li><b class='text-slate-700 dark:text-slate-300'>{html.escape(t(lang, 'api_key_present'))}:</b> <span class='{'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30' if claw_eff.get('apiKey') else 'text-red-600 bg-red-50 dark:bg-red-900/30'} px-1.5 rounded text-xs'>{html.escape(t(lang, mask_present(claw_eff.get('apiKey'))))}</span></li>
+        <li class='font-mono text-xs text-slate-500 mt-1 break-all'>{html.escape(claw_eff.get('endpoint', ''))}</li>
+      </ul>
+    </div>
+    <div class='md:pl-6'>
+      <h4 class='text-xs font-bold text-slate-400 uppercase tracking-wider mb-2'>{html.escape(t(lang, 'codex_setting'))}</h4>
+      <ul class='text-sm space-y-2'>
+        <li><b class='text-slate-700 dark:text-slate-300'>{html.escape(t(lang, 'model'))}:</b> {html.escape(cfg.get('codex', {}).get('model', ''))} <span class='text-slate-400'>({html.escape(cfg.get('codex', {}).get('thinking', ''))})</span></li>
+        <li><b class='text-slate-700 dark:text-slate-300'>{html.escape(t(lang, 'api_key_present'))}:</b> <span class='{'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30' if cfg.get('codex', {}).get('apiKey') else 'text-red-600 bg-red-50 dark:bg-red-900/30'} px-1.5 rounded text-xs'>{html.escape(t(lang, mask_present(cfg.get('codex', {}).get('apiKey'))))}</span></li>
+        <li class='font-mono text-xs text-slate-500 mt-1 break-all'>{html.escape(cfg.get('codex', {}).get('endpoint', ''))}</li>
+        <li class='flex gap-2 mt-2'>
+          <span class='text-[10px] uppercase font-bold bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-700'>Plan: {cfg.get('codex', {}).get('planMode')}</span>
+          <span class='text-[10px] uppercase font-bold bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-700'>MaxPerm: {cfg.get('codex', {}).get('maxPermission')}</span>
+        </li>
+      </ul>
     </div>
   </div>
 </div>
 
-<div class='two-col' style='margin-bottom:24px;'>
-  <div class='card' style='margin:0;'>
-    <div class='card-header'><div class='card-title'>{html.escape(t(lang, 'role_policy_title'))}</div></div>
-    <div class='card-body text-muted'>{html.escape(t(lang, 'role_policy_body'))}</div>
-  </div>
-  <div class='card' style='margin:0;'>
-    <div class='card-header'><div class='card-title'>{html.escape(t(lang, 'effective_claw_identity'))}</div></div>
-    <div class='card-body'>
-      <div class='text-muted' style='margin-bottom:12px;'>{html.escape(profile.get('description', ''))}</div>
-      <div style='margin-bottom:8px;'><b>{html.escape(t(lang, 'profile_label'))}:</b> {html.escape(claw_eff.get('profileName', ''))}</div>
-      <div style='margin-bottom:4px;'><b>{html.escape(t(lang, 'soul_label'))}:</b></div>
-      <div class='mono settings-group' style='font-size:0.85rem;'>{html.escape(claw_eff.get('soul', ''))}</div>
-      <div style='margin-bottom:4px;'><b>{html.escape(t(lang, 'skills_label'))}:</b></div>
-      <div class='mono settings-group' style='font-size:0.85rem; margin-bottom:0;'>{html.escape(claw_eff.get('skills', ''))}</div>
+<div class='grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6'>
+  
+  <div class='bg-white dark:bg-darkcard border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-sm flex flex-col h-[500px]'>
+    <div class='bg-slate-50/80 dark:bg-zinc-800/40 px-5 py-4 border-b border-slate-200 dark:border-zinc-800 shrink-0'>
+      <h3 class='font-bold uppercase tracking-wider text-sm flex items-center justify-between'>
+        {html.escape(t(lang, 'user_claw_dialogue'))}
+        <span class='w-2 h-2 rounded-full bg-brand-500 animate-pulse {'hidden' if not live['isRunning'] else ''}'></span>
+      </h3>
     </div>
-  </div>
-</div>
-
-<div class='two-col' style='margin-bottom:24px;'>
-  <div class='card' style='margin:0;'>
-    <div class='card-header'><div class='card-title'>{html.escape(t(lang, 'user_claw_dialogue'))}</div></div>
-    <div class='dialogue-shell'>{user_claw_html}</div>
-    <div class='card-body' style='border-top:1px solid var(--border); border-radius: 0 0 var(--radius) var(--radius);'>
-      <form method='post' action='/append-user/{html.escape(pid)}' style='margin:0;'>
+    <div id='user-claw-dialogue' class='flex-1 overflow-y-auto bg-slate-50/30 dark:bg-zinc-900/30'>{live['userClawHtml']}</div>
+    <div class='p-4 border-t border-slate-200 dark:border-zinc-800 bg-white dark:bg-darkcard rounded-b-2xl shrink-0'>
+      <form method='post' action='/append-user/{html.escape(pid)}' class='flex gap-3 m-0'>
         <input type='hidden' name='lang' value='{html.escape(lang)}' />
-        <textarea name='message' rows='3' placeholder='{html.escape(t(lang, 'append_placeholder'))}' required></textarea>
-        <div style='display:flex; justify-content:flex-end;'>
-          <button type='submit' class='btn btn-primary'>{html.escape(t(lang, 'append_button'))}</button>
-        </div>
+        <input type='text' name='message' placeholder='{html.escape(t(lang, 'append_placeholder'))}' required class='flex-1 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition'>
+        <button type='submit' class='px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl shadow-sm transition active:scale-95 whitespace-nowrap'>{html.escape(t(lang, 'append_button'))}</button>
       </form>
     </div>
   </div>
 
-  <div class='card' style='margin:0;'>
-    <div class='card-header'><div class='card-title'>{html.escape(t(lang, 'claw_codex_dialogue'))}</div></div>
-    <div class='dialogue-shell' style='border-radius: 0 0 var(--radius) var(--radius);'>{claw_codex_html}</div>
+  <div class='bg-white dark:bg-darkcard border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-sm flex flex-col h-[500px]'>
+    <div class='bg-slate-50/80 dark:bg-zinc-800/40 px-5 py-4 border-b border-slate-200 dark:border-zinc-800 shrink-0'>
+      <h3 class='font-bold uppercase tracking-wider text-sm'>{html.escape(t(lang, 'claw_codex_dialogue'))}</h3>
+    </div>
+    <div id='claw-codex-dialogue' class='flex-1 overflow-y-auto bg-slate-50/30 dark:bg-zinc-900/30 rounded-b-2xl'>{live['clawCodexHtml']}</div>
   </div>
+
 </div>
 
-<div class='two-col' style='margin-bottom:24px;'>
-  <div class='card' style='margin:0;'>
-    <div class='card-header'><div class='card-title'>{html.escape(t(lang, 'save_current_claw_profile'))}</div></div>
-    <div class='card-body'>
-      <div class='text-muted' style='margin-bottom:16px;'>{html.escape(t(lang, 'profile_saved_hint'))}</div>
-      <form method='post' action='/save-profile/{html.escape(pid)}'>
+<div class='grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8'>
+  
+  <div class='bg-white dark:bg-darkcard border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-sm flex flex-col'>
+    <div class='bg-slate-50/80 dark:bg-zinc-800/40 px-5 py-4 border-b border-slate-200 dark:border-zinc-800'>
+      <h3 class='font-bold uppercase tracking-wider text-sm'>{html.escape(t(lang, 'save_current_claw_profile'))}</h3>
+    </div>
+    <div class='p-5'>
+      <p class='text-sm text-slate-500 dark:text-zinc-400 mb-4'>{html.escape(t(lang, 'profile_saved_hint'))}</p>
+      <form method='post' action='/save-profile/{html.escape(pid)}' class='space-y-4 m-0'>
         <input type='hidden' name='lang' value='{html.escape(lang)}' />
-        <label>{html.escape(t(lang, 'profile_name'))}</label>
-        <input name='profileName' placeholder='{html.escape(claw_eff.get('profileName', ''))}' />
-        <label>{html.escape(t(lang, 'profile_description'))}</label>
-        <input name='profileDescription' placeholder='{html.escape(t(lang, 'profile_desc_placeholder'))}' />
-        <button type='submit' class='btn btn-secondary'>{html.escape(t(lang, 'save_profile_button'))}</button>
+        <div><label class='{label_cls}'>{html.escape(t(lang, 'profile_name'))}</label><input name='profileName' placeholder='{html.escape(claw_eff.get('profileName', ''))}' class='{input_cls}' /></div>
+        <div><label class='{label_cls}'>{html.escape(t(lang, 'profile_description'))}</label><input name='profileDescription' placeholder='{html.escape(t(lang, 'profile_desc_placeholder'))}' class='{input_cls}' /></div>
+        <button type='submit' class='{btn_secondary_cls} w-full mt-2'>{html.escape(t(lang, 'save_profile_button'))}</button>
       </form>
     </div>
   </div>
 
-  <div class='card' style='margin:0;'>
-    <div class='card-header'>
-      <div class='card-title'>{html.escape(t(lang, 'self_test_details'))}</div>
-      <span class='badge {badge_class(st_status)}'>{html.escape(t(lang, st_status) if st_status in I18N[lang] else st_status)}</span>
+  <div class='bg-white dark:bg-darkcard border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-sm flex flex-col'>
+    <div class='bg-slate-50/80 dark:bg-zinc-800/40 px-5 py-4 border-b border-slate-200 dark:border-zinc-800 flex justify-between items-center'>
+      <h3 class='font-bold uppercase tracking-wider text-sm'>{html.escape(t(lang, 'self_test_details'))}</h3>
+      <span class='badge {live['selfTestStatusClass']}' id='self-test-details-badge'>{html.escape(live['selfTestStatusLabel'])}</span>
     </div>
-    <div class='card-body' style='padding:0;'>
-      <table class='data-table'>
-        <thead>
+    <div class='flex-1 overflow-y-auto max-h-[300px]'>
+      <table class='w-full text-left border-collapse'>
+        <thead class='bg-slate-50 dark:bg-zinc-900/50 text-xs uppercase text-slate-400 border-b border-slate-200 dark:border-zinc-800 sticky top-0'>
           <tr>
-            <th>{html.escape(t(lang, 'check'))}</th>
-            <th>{html.escape(t(lang, 'result'))}</th>
-            <th>{html.escape(t(lang, 'detail'))}</th>
+            <th class='py-3 pl-5 pr-4 font-semibold w-1/4'>{html.escape(t(lang, 'check'))}</th>
+            <th class='py-3 px-4 font-semibold w-24'>{html.escape(t(lang, 'result'))}</th>
+            <th class='py-3 px-5 font-semibold'>{html.escape(t(lang, 'detail'))}</th>
           </tr>
         </thead>
-        <tbody>{checks_html}</tbody>
+        <tbody id='self-test-checks-body' class='divide-y divide-slate-100 dark:divide-zinc-800 px-5 text-sm'>
+          {live['checksHtml']}
+        </tbody>
       </table>
-      <div class='card-body' style='border-top:1px solid var(--border);'>
-        <form method='post' action='/selftest/{html.escape(pid)}' style='margin:0;'>
-          <input type='hidden' name='lang' value='{html.escape(lang)}' />
-          <button type='submit' class='btn btn-secondary' {'disabled' if st_status == 'running' else ''}>{html.escape(t(lang, 'run_self_test'))}</button>
-        </form>
+    </div>
+    <div class='p-4 border-t border-slate-200 dark:border-zinc-800 bg-slate-50/30 dark:bg-zinc-900/30 rounded-b-2xl'>
+      <form method='post' action='/selftest/{html.escape(pid)}' class='m-0'>
+        <input type='hidden' name='lang' value='{html.escape(lang)}' />
+        <button type='submit' class='{btn_secondary_cls} w-full' id='run-self-test-btn-bottom' {'disabled' if live['selfTestRunning'] else ''}>{html.escape(t(lang, 'run_self_test'))}</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<div class='grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8'>
+  
+  <div class='bg-[#0f172a] dark:bg-[#000000] border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex flex-col h-[360px]'>
+    <div class='flex justify-between items-center px-4 py-2.5 bg-white/5 border-b border-white/10 shrink-0'>
+      <div class='flex items-center gap-2'>
+        <div class='flex gap-1.5 mr-3'>
+          <div class='terminal-dot dot-r'></div><div class='terminal-dot dot-y'></div><div class='terminal-dot dot-g'></div>
+        </div>
+        <span class='text-xs font-mono text-slate-400'>~/{html.escape(t(lang, 'claw_log'))}</span>
       </div>
+      <button type='button' class='text-[11px] font-mono text-slate-300 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full px-2.5 py-1 transition copy-btn' data-copy-target='claw-log-body'>复制全部</button>
     </div>
+    <div class='flex-1 p-4 overflow-y-auto font-mono text-[13px] text-slate-300 leading-relaxed terminal-body whitespace-pre-wrap break-all' id='claw-log-body'>{html.escape(live['clawLog'])}</div>
   </div>
+
+  <div class='bg-[#0f172a] dark:bg-[#000000] border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex flex-col h-[360px]'>
+    <div class='flex justify-between items-center px-4 py-2.5 bg-white/5 border-b border-white/10 shrink-0'>
+      <div class='flex items-center gap-2'>
+        <div class='flex gap-1.5 mr-3'>
+          <div class='terminal-dot dot-r'></div><div class='terminal-dot dot-y'></div><div class='terminal-dot dot-g'></div>
+        </div>
+        <span class='text-xs font-mono text-slate-400'>~/{html.escape(t(lang, 'codex_log'))}</span>
+      </div>
+      <button type='button' class='text-[11px] font-mono text-slate-300 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full px-2.5 py-1 transition copy-btn' data-copy-target='codex-log-body'>复制全部</button>
+    </div>
+    <div class='flex-1 p-4 overflow-y-auto font-mono text-[13px] text-slate-300 leading-relaxed terminal-body whitespace-pre-wrap break-all' id='codex-log-body'>{html.escape(live['codexLog'])}</div>
+  </div>
+
 </div>
 
-<div class='two-col'>
-  <div class='terminal-window'>
-    <div class='terminal-header'>
-      <div class='terminal-dot dot-r'></div><div class='terminal-dot dot-y'></div><div class='terminal-dot dot-g'></div>
-      <span class='mono text-muted' style='margin-left:8px;'>~/{html.escape(t(lang, 'claw_log'))}</span>
-    </div>
-    <div class='terminal-body mono'>{claw_log}</div>
-  </div>
+<script>
+(function() {{
+  function preserveScroll(el, updater) {{
+    if (!el) return;
+    const fromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    updater();
+    el.scrollTop = Math.max(0, el.scrollHeight - el.clientHeight - fromBottom);
+  }}
 
-  <div class='terminal-window'>
-    <div class='terminal-header'>
-      <div class='terminal-dot dot-r'></div><div class='terminal-dot dot-y'></div><div class='terminal-dot dot-g'></div>
-      <span class='mono text-muted' style='margin-left:8px;'>~/{html.escape(t(lang, 'codex_log'))}</span>
-    </div>
-    <div class='terminal-body mono'>{codex_log}</div>
-  </div>
-</div>
+  function wireCopyButtons() {{
+    document.querySelectorAll('[data-copy-target]').forEach(btn => {{
+      if (btn.dataset.copyBound === '1') return;
+      btn.dataset.copyBound = '1';
+      btn.addEventListener('click', async () => {{
+        const el = document.getElementById(btn.getAttribute('data-copy-target'));
+        if (!el) return;
+        const original = btn.textContent;
+        try {{
+          await navigator.clipboard.writeText(el.innerText || el.textContent || '');
+          btn.textContent = '已复制';
+          btn.classList.add('copied');
+        }} catch (e) {{
+          btn.textContent = '失败';
+        }}
+        setTimeout(() => {{
+          btn.textContent = original;
+          btn.classList.remove('copied');
+        }}, 1200);
+      }});
+    }});
+  }}
 
-<script>setTimeout(() => location.reload(), 5000)</script>
+  async function refreshProductLive() {{
+    try {{
+      const resp = await fetch('/api/product-live/{html.escape(pid)}?lang={html.escape(lang)}', {{ cache: 'no-store' }});
+      if (!resp.ok) return;
+      const data = await resp.json();
+
+      const statusBadge = document.getElementById('product-status-badge');
+      if (statusBadge) {{
+        statusBadge.className = 'badge ' + data.statusClass;
+        statusBadge.textContent = data.statusLabel;
+      }}
+
+      const selfTestBadge = document.getElementById('self-test-status-badge');
+      if (selfTestBadge) {{
+        selfTestBadge.className = 'badge ' + data.selfTestStatusClass;
+        selfTestBadge.textContent = (selfTestBadge.dataset.labelPrefix || '') + data.selfTestStatusLabel;
+      }}
+
+      const selfTestDetailsBadge = document.getElementById('self-test-details-badge');
+      if (selfTestDetailsBadge) {{
+        selfTestDetailsBadge.className = 'badge ' + data.selfTestStatusClass;
+        selfTestDetailsBadge.textContent = data.selfTestStatusLabel;
+      }}
+
+      const runSelfTestBtn = document.getElementById('run-self-test-btn');
+      if (runSelfTestBtn) runSelfTestBtn.disabled = !!data.selfTestRunning;
+      const runSelfTestBtnBottom = document.getElementById('run-self-test-btn-bottom');
+      if (runSelfTestBtnBottom) runSelfTestBtnBottom.disabled = !!data.selfTestRunning;
+      const startRunBtn = document.getElementById('start-run-btn');
+      if (startRunBtn) startRunBtn.disabled = !!data.isRunning;
+      const stopRunBtn = document.getElementById('stop-run-btn');
+      if (stopRunBtn) stopRunBtn.disabled = !data.isRunning;
+      const deleteBtn = document.getElementById('delete-product-btn');
+      if (deleteBtn) deleteBtn.disabled = !!data.isRunning;
+
+      const userClaw = document.getElementById('user-claw-dialogue');
+      preserveScroll(userClaw, () => {{ if (userClaw) userClaw.innerHTML = data.userClawHtml; }});
+      const clawCodex = document.getElementById('claw-codex-dialogue');
+      preserveScroll(clawCodex, () => {{ if (clawCodex) clawCodex.innerHTML = data.clawCodexHtml; }});
+      const checksBody = document.getElementById('self-test-checks-body');
+      if (checksBody) checksBody.innerHTML = data.checksHtml;
+      const clawLog = document.getElementById('claw-log-body');
+      preserveScroll(clawLog, () => {{ if (clawLog) clawLog.textContent = data.clawLog; }});
+      const codexLog = document.getElementById('codex-log-body');
+      preserveScroll(codexLog, () => {{ if (codexLog) codexLog.textContent = data.codexLog; }});
+    }} catch (e) {{}}
+  }}
+
+  wireCopyButtons();
+  setInterval(refreshProductLive, 5000);
+}})();
+</script>
 """
         self.send_html(page_template(cfg.get('name', pid), body, lang, f'/product/{pid}'))
 
