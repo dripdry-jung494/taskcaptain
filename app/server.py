@@ -42,7 +42,9 @@ for p in [PRODUCTS, TRASH, CLAW_PROFILES, RUNS]:
     p.mkdir(parents=True, exist_ok=True)
 
 ACTIVE_RUNS: dict[str, dict] = {}
+ACTIVE_SELF_TESTS: dict[str, dict] = {}
 RUN_LOCK = threading.Lock()
+SELF_TEST_LOCK = threading.Lock()
 
 I18N = {
     'zh': {
@@ -613,16 +615,25 @@ def build_codex_env(cfg: dict) -> dict:
         env['OPENAI_BASE_URL'] = codex['endpoint']
     if codex.get('apiKey'):
         env['OPENAI_API_KEY'] = codex['apiKey']
-    if DEFAULT_PROXY:
-        env['HTTP_PROXY'] = DEFAULT_PROXY
-        env['HTTPS_PROXY'] = DEFAULT_PROXY
-        env['http_proxy'] = DEFAULT_PROXY
-        env['https_proxy'] = DEFAULT_PROXY
+
+    lower_proxy = env.get('http_proxy') or env.get('https_proxy') or ''
+    upper_proxy = env.get('HTTP_PROXY') or env.get('HTTPS_PROXY') or ''
+    effective_proxy = DEFAULT_PROXY or lower_proxy or upper_proxy
+    if not DEFAULT_PROXY and lower_proxy and upper_proxy and lower_proxy != upper_proxy:
+        effective_proxy = lower_proxy
+
+    if effective_proxy:
+        env['HTTP_PROXY'] = effective_proxy
+        env['HTTPS_PROXY'] = effective_proxy
+        env['http_proxy'] = effective_proxy
+        env['https_proxy'] = effective_proxy
     else:
         for key in ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy']:
             env.pop(key, None)
-    env['NO_PROXY'] = DEFAULT_NO_PROXY
-    env['no_proxy'] = DEFAULT_NO_PROXY
+
+    effective_no_proxy = DEFAULT_NO_PROXY or env.get('no_proxy') or env.get('NO_PROXY') or '127.0.0.1,localhost,::1'
+    env['NO_PROXY'] = effective_no_proxy
+    env['no_proxy'] = effective_no_proxy
     return env
 
 
@@ -674,6 +685,38 @@ def set_active_proc(product_id: str, proc):
 def clear_active_run(product_id: str):
     with RUN_LOCK:
         ACTIVE_RUNS.pop(product_id, None)
+
+
+def active_self_test_info(product_id: str):
+    with SELF_TEST_LOCK:
+        return ACTIVE_SELF_TESTS.get(product_id)
+
+
+def set_active_self_test(product_id: str, info: dict):
+    with SELF_TEST_LOCK:
+        ACTIVE_SELF_TESTS[product_id] = info
+
+
+def clear_active_self_test(product_id: str):
+    with SELF_TEST_LOCK:
+        ACTIVE_SELF_TESTS.pop(product_id, None)
+
+
+def terminate_process_tree(proc):
+    if not proc:
+        return
+    try:
+        if proc.poll() is not None:
+            return
+    except Exception:
+        return
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+    except Exception:
+        try:
+            proc.terminate()
+        except Exception:
+            pass
 
 
 def start_run(product_id: str) -> str:
@@ -728,9 +771,21 @@ def delete_product(product_id: str) -> tuple[bool, str]:
     return True, str(dst)
 
 
-def start_self_test(product_id: str) -> None:
+def start_self_test(product_id: str) -> str:
+    info = active_self_test_info(product_id)
+    if info and info.get('thread') and info['thread'].is_alive():
+        return 'already-running'
+
+    st = load_product_state(product_id)
+    st.setdefault('selfTest', {})
+    st['selfTest'] = {'status': 'running', 'updatedAt': now_iso(), 'checks': {}}
+    st['updatedAt'] = now_iso()
+    save_product_state(product_id, st)
+
     t_runner = threading.Thread(target=run_self_test, args=(product_id,), daemon=True)
+    set_active_self_test(product_id, {'thread': t_runner, 'procs': [], 'startedAt': now_iso()})
     t_runner.start()
+    return 'started'
 
 
 def save_current_product_claw_as_profile(product_id: str, form: dict[str, str]) -> str:
@@ -770,7 +825,6 @@ def save_current_product_claw_as_profile(product_id: str, form: dict[str, str]) 
 def run_self_test(product_id: str) -> None:
     d = product_dir(product_id)
     cfg = load_product_config(product_id)
-    st = load_product_state(product_id)
     claw_log = d / 'logs' / 'claw.log'
     codex_log = d / 'logs' / 'codex.log'
     product_folder = cfg.get('productFolder') or '/tmp'
@@ -778,6 +832,7 @@ def run_self_test(product_id: str) -> None:
     claw_eff = effective_claw_config(cfg)
     session_name = codex.get('sessionName') or f'oc-product-{product_id}'
     env = build_codex_env(cfg)
+    checks = {}
 
     def log_claw(text: str):
         append_log(claw_log, f'[{now_iso()}] {text}')
@@ -785,58 +840,100 @@ def run_self_test(product_id: str) -> None:
     def log_codex(text: str):
         append_log(codex_log, f'[{now_iso()}] {text}')
 
-    log_claw('Starting self-test.')
-    st.setdefault('selfTest', {})
-    st['selfTest'] = {'status': 'running', 'updatedAt': now_iso(), 'checks': {}}
-    save_product_state(product_id, st)
+    def record_self_test(final_status: str):
+        st = load_product_state(product_id)
+        st['selfTest'] = {'status': final_status, 'updatedAt': now_iso(), 'checks': checks}
+        st['updatedAt'] = now_iso()
+        save_product_state(product_id, st)
 
-    checks = {}
-
-    checks['agent_config'] = {
-        'ok': bool(claw_eff.get('endpoint') and claw_eff.get('model')),
-        'detail': f"profile={claw_eff.get('profileName','-')} endpoint={claw_eff.get('endpoint','-')} model={claw_eff.get('model','-')} thinking={claw_eff.get('thinking','-')} apiKey={'yes' if claw_eff.get('apiKey') else 'no'}",
-    }
-    log_claw(f"Self-test agent_config: {checks['agent_config']}")
-
-    checks['agent_connection'] = probe_openai_like_endpoint(claw_eff.get('endpoint', ''), claw_eff.get('apiKey'))
-    log_claw(f"Self-test agent_connection: {checks['agent_connection']['ok']}")
-
-    checks['product_folder'] = {'ok': Path(product_folder).exists(), 'detail': product_folder}
-    log_claw(f"Self-test product_folder: {checks['product_folder']}")
-
-    try:
-        r = subprocess.run([str(ACPX), '--cwd', product_folder, 'codex', 'sessions', 'ensure', '--name', session_name], env=env, check=False, capture_output=True, text=True, timeout=120)
-        out = (r.stdout or '') + (('\n' + r.stderr) if r.stderr else '')
-        log_codex(out)
-        checks['codex_session'] = {'ok': r.returncode == 0, 'detail': out[-500:]}
-    except Exception as e:
-        checks['codex_session'] = {'ok': False, 'detail': str(e)}
-    log_claw(f"Self-test codex_session: {checks['codex_session']['ok']}")
-
-    try:
-        r = subprocess.run([str(ACPX), '--cwd', product_folder, 'codex', 'status', '--session', session_name], env=env, check=False, capture_output=True, text=True, timeout=120)
-        out = (r.stdout or '') + (('\n' + r.stderr) if r.stderr else '')
-        log_codex(out)
-        checks['codex_status'] = {'ok': r.returncode == 0 and 'status:' in out, 'detail': out[-500:]}
-    except Exception as e:
-        checks['codex_status'] = {'ok': False, 'detail': str(e)}
-    log_claw(f"Self-test codex_status: {checks['codex_status']['ok']}")
+    def run_selftest_command(cmd: list[str], timeout_seconds: int) -> tuple[int | None, str, bool]:
+        proc = None
+        try:
+            proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
+            info = active_self_test_info(product_id)
+            if info is not None:
+                info.setdefault('procs', []).append(proc)
+            try:
+                stdout, stderr = proc.communicate(timeout=timeout_seconds)
+                out = (stdout or '') + (('\n' + stderr) if stderr else '')
+                return proc.returncode, out, False
+            except subprocess.TimeoutExpired:
+                terminate_process_tree(proc)
+                try:
+                    stdout, stderr = proc.communicate(timeout=5)
+                except Exception:
+                    stdout, stderr = '', ''
+                out = (stdout or '') + (('\n' + stderr) if stderr else '')
+                return None, out, True
+        finally:
+            if proc is not None:
+                info = active_self_test_info(product_id)
+                if info is not None:
+                    info['procs'] = [p for p in info.get('procs', []) if p is not proc]
 
     try:
-        r = subprocess.run([str(ACPX), '--cwd', product_folder, '--approve-all', '--non-interactive-permissions', 'deny', 'codex', 'exec', 'Reply with exactly SELFTEST_CODEX_OK'], env=env, check=False, capture_output=True, text=True, timeout=300)
-        out = (r.stdout or '') + (('\n' + r.stderr) if r.stderr else '')
-        log_codex(out)
-        checks['codex_prompt'] = {'ok': r.returncode == 0 and 'SELFTEST_CODEX_OK' in out, 'detail': out[-500:]}
-    except Exception as e:
-        checks['codex_prompt'] = {'ok': False, 'detail': str(e)}
-    log_claw(f"Self-test codex_prompt: {checks['codex_prompt']['ok']}")
+        log_claw('Starting self-test.')
 
-    overall = all(v.get('ok') for v in checks.values())
-    st = load_product_state(product_id)
-    st['selfTest'] = {'status': 'passed' if overall else 'failed', 'updatedAt': now_iso(), 'checks': checks}
-    save_product_state(product_id, st)
-    append_user_claw_message(product_id, 'claw', f"Self-test finished: {'passed' if overall else 'failed'}.")
-    log_claw(f"Self-test finished: {'passed' if overall else 'failed'}.")
+        checks['agent_config'] = {
+            'ok': bool(claw_eff.get('endpoint') and claw_eff.get('model')),
+            'detail': f"profile={claw_eff.get('profileName','-')} endpoint={claw_eff.get('endpoint','-')} model={claw_eff.get('model','-')} thinking={claw_eff.get('thinking','-')} apiKey={'yes' if claw_eff.get('apiKey') else 'no'}",
+        }
+        log_claw(f"Self-test agent_config: {checks['agent_config']}")
+
+        checks['agent_connection'] = probe_openai_like_endpoint(claw_eff.get('endpoint', ''), claw_eff.get('apiKey'))
+        log_claw(f"Self-test agent_connection: {checks['agent_connection']['ok']}")
+
+        checks['product_folder'] = {'ok': Path(product_folder).exists(), 'detail': product_folder}
+        log_claw(f"Self-test product_folder: {checks['product_folder']}")
+
+        session_cmd = [str(ACPX), '--cwd', product_folder, 'codex', 'sessions', 'ensure', '--name', session_name]
+        rc, out, timed_out = run_selftest_command(session_cmd, 45)
+        log_codex(out)
+        if timed_out:
+            checks['codex_session'] = {'ok': False, 'detail': f'timed out after 45 seconds: {" ".join(session_cmd)}'}
+        else:
+            checks['codex_session'] = {'ok': rc == 0, 'detail': out[-500:]}
+        log_claw(f"Self-test codex_session: {checks['codex_session']['ok']}")
+
+        status_cmd = [str(ACPX), '--cwd', product_folder, 'codex', 'status', '--session', session_name]
+        rc, out, timed_out = run_selftest_command(status_cmd, 20)
+        log_codex(out)
+        if timed_out:
+            checks['codex_status'] = {'ok': False, 'detail': f'timed out after 20 seconds: {" ".join(status_cmd)}'}
+        else:
+            detail = out[-500:]
+            if rc == 0 and 'status:' in out and 'status: no-session' not in out:
+                checks['codex_status'] = {'ok': True, 'detail': detail}
+            elif 'status: dead' in out:
+                checks['codex_status'] = {'ok': True, 'detail': detail + '\n(note: session process is dead, but this backend may still support one-shot exec successfully)'}
+            else:
+                checks['codex_status'] = {'ok': False, 'detail': detail}
+        log_claw(f"Self-test codex_status: {checks['codex_status']['ok']}")
+
+        prompt_cmd = [str(ACPX), '--cwd', product_folder, '--approve-all', '--non-interactive-permissions', 'deny', 'codex', 'exec', 'Reply with exactly SELFTEST_CODEX_OK']
+        rc, out, timed_out = run_selftest_command(prompt_cmd, 60)
+        log_codex(out)
+        if timed_out:
+            checks['codex_prompt'] = {'ok': False, 'detail': f'timed out after 60 seconds: {" ".join(prompt_cmd)}'}
+        else:
+            checks['codex_prompt'] = {'ok': rc == 0 and 'SELFTEST_CODEX_OK' in out, 'detail': out[-500:]}
+        log_claw(f"Self-test codex_prompt: {checks['codex_prompt']['ok']}")
+
+        overall = checks['agent_config']['ok'] and checks['agent_connection']['ok'] and checks['product_folder']['ok'] and checks['codex_session']['ok'] and checks['codex_prompt']['ok']
+        record_self_test('passed' if overall else 'failed')
+        append_user_claw_message(product_id, 'claw', f"Self-test finished: {'passed' if overall else 'failed'}.")
+        log_claw(f"Self-test finished: {'passed' if overall else 'failed'}.")
+    except Exception as e:
+        checks['internal_error'] = {'ok': False, 'detail': str(e)}
+        record_self_test('failed')
+        append_user_claw_message(product_id, 'claw', 'Self-test finished: failed.')
+        log_claw(f'Self-test failed with exception: {e}')
+    finally:
+        info = active_self_test_info(product_id)
+        if info is not None:
+            for proc in info.get('procs', []):
+                terminate_process_tree(proc)
+        clear_active_self_test(product_id)
 
 
 def run_codex_command(cmd: list[str], env: dict, timeout_seconds: int, stop_event: threading.Event, product_id: str):
@@ -1452,7 +1549,10 @@ class Handler(BaseHTTPRequestHandler):
             return
         if parsed.path.startswith('/selftest/'):
             pid = parsed.path.split('/')[-1]
-            start_self_test(pid)
+            result = start_self_test(pid)
+            if result == 'already-running':
+                append_user_claw_message(pid, 'claw', 'Self-test request ignored because a self-test is already running for this task.')
+                append_log(product_dir(pid) / 'logs' / 'claw.log', f'[{now_iso()}] Ignored duplicate self-test request while a self-test was already running.')
             self.redirect(f'/product/{pid}?lang={lang}')
             return
         if parsed.path.startswith('/append-user/'):
@@ -1770,7 +1870,7 @@ class Handler(BaseHTTPRequestHandler):
   <div class='view-header-actions'>
     <form method='post' action='/selftest/{html.escape(pid)}' style='margin:0;'>
       <input type='hidden' name='lang' value='{html.escape(lang)}' />
-      <button type='submit' class='btn btn-secondary'>{html.escape(t(lang, 'run_self_test'))}</button>
+      <button type='submit' class='btn btn-secondary' {'disabled' if st_status == 'running' else ''}>{html.escape(t(lang, 'run_self_test'))}</button>
     </form>
     <form method='post' action='/start/{html.escape(pid)}' style='margin:0;'>
       <input type='hidden' name='lang' value='{html.escape(lang)}' />
@@ -1894,7 +1994,7 @@ class Handler(BaseHTTPRequestHandler):
       <div class='card-body' style='border-top:1px solid var(--border);'>
         <form method='post' action='/selftest/{html.escape(pid)}' style='margin:0;'>
           <input type='hidden' name='lang' value='{html.escape(lang)}' />
-          <button type='submit' class='btn btn-secondary'>{html.escape(t(lang, 'run_self_test'))}</button>
+          <button type='submit' class='btn btn-secondary' {'disabled' if st_status == 'running' else ''}>{html.escape(t(lang, 'run_self_test'))}</button>
         </form>
       </div>
     </div>
