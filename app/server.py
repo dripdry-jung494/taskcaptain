@@ -58,6 +58,9 @@ I18N = {
         'product_name': '任务名称',
         'goal': '目标',
         'goal_placeholder': '这个任务要实现什么？',
+        'max_turns': '最大回合数',
+        'max_turns_help': '每次运行最多执行多少个回合；达到上限会标记失败（默认 8）。',
+        'turn_progress': '回合进度',
         'product_folder': '工作目录（可写范围）',
         'claw_endpoint': 'Agent 端点',
         'claw_api_key': 'Agent API Key',
@@ -155,6 +158,9 @@ I18N = {
         'product_name': 'Task Name',
         'goal': 'Goal',
         'goal_placeholder': 'What should this task achieve?',
+        'max_turns': 'Max Turns',
+        'max_turns_help': 'Max Claw↔Codex turns per run; reaching the limit will mark failed (default 8).',
+        'turn_progress': 'Turn progress',
         'product_folder': 'Workspace Folder (Codex writable)',
         'claw_endpoint': 'Agent Endpoint',
         'claw_api_key': 'Agent API Key',
@@ -412,6 +418,18 @@ def normalize_config(cfg: dict) -> tuple[dict, bool]:
     if 'id' not in cfg:
         cfg['id'] = f'product-{uuid.uuid4().hex[:8]}'
         changed = True
+    if 'maxTurns' not in cfg:
+        cfg['maxTurns'] = 8
+        changed = True
+    else:
+        try:
+            cfg['maxTurns'] = int(cfg.get('maxTurns') or 8)
+        except Exception:
+            cfg['maxTurns'] = 8
+        if cfg['maxTurns'] < 1:
+            cfg['maxTurns'] = 1
+        if cfg['maxTurns'] > 99:
+            cfg['maxTurns'] = 99
     claw = cfg.setdefault('claw', {})
     codex = cfg.setdefault('codex', {})
     defaults = {
@@ -454,6 +472,7 @@ def normalize_state(st: dict) -> tuple[dict, bool]:
         'updatedAt': now_iso(),
         'lastRunId': None,
         'lastError': None,
+        'currentTurn': 0,
         'selfTest': {'status': 'not-run', 'updatedAt': None, 'checks': {}},
         'stopRequested': False,
     }
@@ -582,6 +601,14 @@ def create_product(form: dict[str, str]) -> str:
         form.get('name', ''),
         form.get('productFolder', ''),
     )
+    try:
+        max_turns = int((form.get('maxTurns') or '').strip() or '8')
+    except Exception:
+        max_turns = 8
+    if max_turns < 1:
+        max_turns = 1
+    if max_turns > 99:
+        max_turns = 99
     product_id = slugify(name)
     d = product_dir(product_id)
     i = 2
@@ -597,6 +624,7 @@ def create_product(form: dict[str, str]) -> str:
         'name': name,
         'goal': form.get('goal', '').strip(),
         'productFolder': product_folder,
+        'maxTurns': max_turns,
         'claw': {
             'endpoint': form.get('clawEndpoint', '').strip(),
             'apiKey': form.get('clawApiKey', '').strip(),
@@ -779,7 +807,7 @@ def start_run(product_id: str) -> str:
     st = load_product_state(product_id)
     run_id = datetime.now().strftime('%Y%m%d-%H%M%S')
     stop_event = threading.Event()
-    st.update({'status': 'running', 'updatedAt': now_iso(), 'lastRunId': run_id, 'lastError': None, 'stopRequested': False})
+    st.update({'status': 'running', 'updatedAt': now_iso(), 'lastRunId': run_id, 'lastError': None, 'stopRequested': False, 'currentTurn': 0})
     save_product_state(product_id, st)
     cfg = load_product_config(product_id)
     claw_eff = effective_claw_config(cfg)
@@ -1536,14 +1564,24 @@ def run_supervision_loop(product_id: str, run_id: str, stop_event: threading.Eve
         current_codex_task = (plan.get('codex_task') or '').strip() or default_codex_task(1, initial_files)
         last_codex_excerpt = ''
 
-        for turn in range(1, 9):
+        max_turns = 8
+        try:
+            max_turns = int(cfg.get('maxTurns') or 8)
+        except Exception:
+            max_turns = 8
+        if max_turns < 1:
+            max_turns = 1
+        if max_turns > 99:
+            max_turns = 99
+
+        for turn in range(1, max_turns + 1):
             if stop_event.is_set():
                 log_claw('Stop requested before next Codex turn. Marking stopped.')
                 append_user_claw_message(product_id, 'claw', f"{claw_eff.get('profileName')} stopped before dispatching the next Codex turn.")
                 set_state(status='stopped', stopRequested=True)
                 return
 
-            set_state(status='running', stopRequested=False)
+            set_state(status='running', stopRequested=False, currentTurn=turn)
             before_files = workspace_material_files()
             before_snapshot = workspace_snapshot()
             codex_dispatch = (
@@ -1648,7 +1686,7 @@ def run_supervision_loop(product_id: str, run_id: str, stop_event: threading.Eve
 
         log_claw('Reached Claw supervision turn limit without delivery/final failure. Marking failed for now.')
         append_user_claw_message(product_id, 'claw', 'Claw supervision turn limit reached without delivery or final failure. Product marked failed for now.')
-        set_state(status='failed', lastError='claw supervision turn limit reached', stopRequested=False)
+        set_state(status='failed', lastError=f'claw supervision turn limit reached (maxTurns={max_turns})', stopRequested=False)
     except Exception as e:
         log_claw(f'Run failed with exception: {e}')
         append_user_claw_message(product_id, 'claw', f'Run failed with exception: {e}')
@@ -1856,6 +1894,8 @@ def build_product_live_payload(pid: str, lang: str) -> dict:
         'status': status,
         'statusLabel': t(lang, status) if status in I18N[lang] else status,
         'statusClass': badge_class_for(status),
+        'currentTurn': int(st.get('currentTurn') or 0),
+        'maxTurns': int(cfg.get('maxTurns') or 8),
         'selfTestStatus': st_status,
         'selfTestStatusLabel': t(lang, st_status) if st_status in I18N[lang] else st_status,
         'selfTestStatusClass': badge_class_for(st_status),
@@ -1909,6 +1949,22 @@ class Handler(BaseHTTPRequestHandler):
                 except Exception:
                     pass
             self.redirect(f'/?lang={lang}')
+            return
+        if parsed.path.startswith('/set-max-turns/'):
+            pid = parsed.path.split('/')[-1]
+            cfg = load_product_config(pid)
+            try:
+                v = int((form.get('maxTurns') or '').strip() or str(cfg.get('maxTurns') or 8))
+            except Exception:
+                v = int(cfg.get('maxTurns') or 8)
+            if v < 1:
+                v = 1
+            if v > 99:
+                v = 99
+            cfg['maxTurns'] = v
+            save_product_config(pid, cfg)
+            append_log(product_dir(pid) / 'logs' / 'claw.log', f"[{now_iso()}] Updated maxTurns to {v} via UI.")
+            self.redirect(f'/product/{pid}?lang={lang}')
             return
         if parsed.path.startswith('/start/'):
             pid = parsed.path.split('/')[-1]
@@ -2082,6 +2138,11 @@ class Handler(BaseHTTPRequestHandler):
             <textarea name='goal' rows='2' placeholder='{html.escape(t(lang, 'goal_placeholder'))}' class='{input_cls} py-2.5 resize-y'></textarea>
           </div>
           <div>
+            <label class='{label_cls} text-sm'>{html.escape(t(lang, 'max_turns'))}</label>
+            <input type='number' name='maxTurns' min='1' max='99' value='8' class='{input_cls}' />
+            <p class='text-xs text-slate-500 dark:text-zinc-400 mt-1 leading-relaxed'>{html.escape(t(lang, 'max_turns_help'))}</p>
+          </div>
+          <div>
             <label class='{label_cls} text-sm'>{html.escape(t(lang, 'product_folder'))}</label>
             <input name='productFolder' value='' placeholder='{html.escape(DEFAULT_PRODUCT_FOLDER)}' class='{input_cls}' />
           </div>
@@ -2186,6 +2247,7 @@ class Handler(BaseHTTPRequestHandler):
       {html.escape(cfg.get('name', t(lang, 'untitled')))}
       <span class='badge {live['statusClass']}' id='product-status-badge'>{html.escape(live['statusLabel'])}</span>
       <span class='badge {live['selfTestStatusClass']}' id='self-test-status-badge' data-label-prefix='{html.escape(t(lang, 'self_test'))}: '>{html.escape(t(lang, 'self_test'))}: {html.escape(live['selfTestStatusLabel'])}</span>
+      <span class='badge badge-idle' id='turn-progress-badge' data-label-prefix='{html.escape(t(lang, 'turn_progress'))}: '>{html.escape(t(lang, 'turn_progress'))}: {int(st.get('currentTurn') or 0)}/{int(cfg.get('maxTurns') or 8)}</span>
     </h1>
     <div class='font-mono text-sm text-slate-500 dark:text-zinc-400 flex gap-4 flex-wrap'>
       <span>ID: {html.escape(pid)}</span>
@@ -2239,6 +2301,15 @@ class Handler(BaseHTTPRequestHandler):
         <li><b class='text-slate-700 dark:text-slate-300'>{html.escape(t(lang, 'model'))}:</b> {html.escape(cfg.get('codex', {}).get('model', ''))} <span class='text-slate-400'>({html.escape(cfg.get('codex', {}).get('thinking', ''))})</span></li>
         <li><b class='text-slate-700 dark:text-slate-300'>{html.escape(t(lang, 'api_key_present'))}:</b> <span class='{'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30' if cfg.get('codex', {}).get('apiKey') else 'text-red-600 bg-red-50 dark:bg-red-900/30'} px-1.5 rounded text-xs'>{html.escape(t(lang, mask_present(cfg.get('codex', {}).get('apiKey'))))}</span></li>
         <li class='font-mono text-xs text-slate-500 mt-1 break-all'>{html.escape(cfg.get('codex', {}).get('endpoint', ''))}</li>
+        <li>
+          <b class='text-slate-700 dark:text-slate-300'>{html.escape(t(lang, 'max_turns'))}:</b>
+          <form method='post' action='/set-max-turns/{html.escape(pid)}' class='inline-flex items-center gap-2 ml-2 align-middle'>
+            <input type='hidden' name='lang' value='{html.escape(lang)}' />
+            <input type='number' name='maxTurns' min='1' max='99' value='{html.escape(str(int(cfg.get('maxTurns') or 8)))}' class='w-20 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition' />
+            <button type='submit' class='px-2.5 py-1 text-xs font-semibold bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-700 transition'>保存</button>
+          </form>
+        </li>
+
         <li class='flex gap-2 mt-2'>
           <span class='text-[10px] uppercase font-bold bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-700'>Plan: {cfg.get('codex', {}).get('planMode')}</span>
           <span class='text-[10px] uppercase font-bold bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-700'>MaxPerm: {cfg.get('codex', {}).get('maxPermission')}</span>
@@ -2394,6 +2465,16 @@ class Handler(BaseHTTPRequestHandler):
       if (statusBadge) {{
         statusBadge.className = 'badge ' + data.statusClass;
         statusBadge.textContent = data.statusLabel;
+      }}
+
+
+      const turnProgressBadge = document.getElementById('turn-progress-badge');
+      if (turnProgressBadge) {{
+        const prefix = turnProgressBadge.dataset.labelPrefix || '';
+        const currentTurn = (data.currentTurn || 0);
+        const maxTurns = (data.maxTurns || 0);
+        turnProgressBadge.textContent = prefix + currentTurn + '/' + (maxTurns || '-');
+        turnProgressBadge.className = 'badge ' + (data.isRunning ? 'badge-running' : 'badge-idle');
       }}
 
       const selfTestBadge = document.getElementById('self-test-status-badge');
