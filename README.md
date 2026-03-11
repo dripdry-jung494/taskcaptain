@@ -116,6 +116,11 @@ TaskCaptain 致力于把 AI coding 从“聊天式生成”推进到“监督式
 
 > **一键可邮件注册论坛搭建**、**llama2.c优化**等示例陆续更新中...
 
+## 项目架构
+<div align="center">
+<img width="600" height="600" alt="image" src="https://github.com/user-attachments/assets/ef0802d9-46ec-44fb-b293-595c0fc2bd2f" />
+</div>
+
 ## 核心能力
 
 ### 持续推进，而不是一次性回答
