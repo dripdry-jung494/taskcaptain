@@ -11,7 +11,7 @@ TaskCaptain 是面向 Codex 的本地任务执行控制台：
 
 </div>
 
-![TaskCaptain hero](./hero1.png)
+![TaskCaptain hero](./hero2.png)
 
 ---
 
