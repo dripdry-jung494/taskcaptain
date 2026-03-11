@@ -1,17 +1,29 @@
-<div align="center">
 
-# TaskCaptain
+</div>
+
+![TaskCaptain hero](./hero2.png)
+
+<div align="center">
+  
+# TaskCaptain: 
 
 **把目标变成持续执行，直到交付结果。**
+<a href="https://openclaw.ai/" target="_blank"><img src="./openclaw_logo.png" alt="LongWeihan/taskcaptain | OpenClaw" height="40"/></a>
+  
+[![GitHub Stars](https://img.shields.io/github/stars/LongWeihan/taskcaptain?style=flat-square&color=DAA520)](https://github.com/LongWeihan/taskcaptain/stargazers)
+[![GitHub Watchers](https://img.shields.io/github/watchers/LongWeihan/taskcaptain?style=flat-square)](https://github.com/LongWeihan/taskcaptain/watchers)
+[![GitHub Forks](https://img.shields.io/github/forks/LongWeihan/taskcaptain?style=flat-square)](https://github.com/LongWeihan/taskcaptain/network)
+[![OpenClaw](https://img.shields.io/badge/OpenClaw-Required-blue?style=flat-square)](https://github.com/openclaw/openclaw)
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)
+![License](https://img.shields.io/badge/开源协议-MIT-yellow?style=flat-square)
+
 
 TaskCaptain 是面向 Codex 的本地任务执行控制台：
 它把 **User ↔ Agent**、**Agent ↔ Codex**、**执行日志** 明确拆开，让任务推进过程可见、可控、可追踪。
 
 [English](./README-EN.md) · [用户指南](./docs/USER_GUIDE.md) · [部署说明](./docs/DEPLOYMENT.md)
 
-</div>
 
-![TaskCaptain hero](./hero2.png)
 
 ---
 
