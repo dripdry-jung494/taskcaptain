@@ -702,6 +702,26 @@ def build_codex_env(cfg: dict) -> dict:
     effective_no_proxy = DEFAULT_NO_PROXY or env.get('no_proxy') or env.get('NO_PROXY') or '127.0.0.1,localhost,::1'
     env['NO_PROXY'] = effective_no_proxy
     env['no_proxy'] = effective_no_proxy
+
+    # Make execution more reliable for “install deps + run benchmarks” flows.
+    # - Prefer system python3 (Ubuntu /usr/bin/python3 -> 3.12) over Linuxbrew python3 (often newer, fewer wheels).
+    # - Ensure WSL GPU shim tools (nvidia-smi) are discoverable when present.
+    # - Provide a stable PYTHON entry point for scripts.
+    try:
+        path_parts = [p for p in (env.get('PATH') or '').split(':') if p]
+        preferred = ['/usr/bin', '/usr/lib/wsl/lib']
+        new_parts: list[str] = []
+        for p in preferred + path_parts:
+            if p and p not in new_parts:
+                new_parts.append(p)
+        if new_parts:
+            env['PATH'] = ':'.join(new_parts)
+    except Exception:
+        pass
+
+    env.setdefault('PYTHON', '/usr/bin/python3')
+    env.setdefault('PIP_DISABLE_PIP_VERSION_CHECK', '1')
+    env.setdefault('PIP_NO_INPUT', '1')
     return env
 
 
@@ -1041,7 +1061,6 @@ def run_self_test(product_id: str) -> None:
 
         effort = normalize_effort(codex.get('thinking'))
         agent_tokens = [CODEX_ACP_BIN] if CODEX_ACP_BIN else []
-        agent_tokens += ['-c', 'sandbox_permissions=["disk-full-read-access"]']
         agent_tokens += ['-c', 'sandbox_permissions=["disk-full-read-access"]']
         if codex.get('model'):
             agent_tokens += ['-c', f"model=\"{codex.get('model')}\""]
@@ -1632,6 +1651,9 @@ def run_supervision_loop(product_id: str, run_id: str, stop_event: threading.Eve
             f"Skills: {claw_eff.get('skills')}\n"
             "Your job is to drive an autonomous delivery loop: understand the requirement, inspect evidence, decide what Codex should do next, and decide whether the product is delivered or failed.\n"
             "Codex is the implementation agent. You are not Codex. Do not pretend to have edited files yourself.\n"
+            "Assume Codex can execute shell commands inside the product folder. If the user enabled MaxPermission for Codex, Codex is allowed to install dependencies (prefer local venv) and run real tests/benchmarks to produce evidence.\n"
+            "For goals that explicitly require empirical comparison (benchmarks / performance / 跑分 / 对比), do NOT treat placeholder templates as sufficient: require executed result artifacts (CSV/MD/logs) or a rigorously supported negative/inconclusive finding backed by actual runs.\n"
+            "If execution is blocked by missing dependencies or environment setup, instruct Codex to fix the environment and rerun.\n"
             "Be strict and evidence-based. Do not declare delivery unless the workspace and verification evidence justify it.\n"
             "Respond with JSON only, no markdown fences."
         )
@@ -1694,6 +1716,7 @@ def run_supervision_loop(product_id: str, run_id: str, stop_event: threading.Eve
             f"Project kind: {project_kind}\n"
             f"Product name: {cfg.get('name')}\n"
             f"Goal: {cfg.get('goal')}\n"
+            f"Codex MaxPermission: {bool(codex.get('maxPermission'))}\n"
             f"User requests so far:\n{user_context}\n\n"
             f"Current workspace snapshot:\n{initial_snapshot}\n\n"
             f"Delivery bar for this project type:\n{json.dumps(acceptance_profile.get('delivery_bar', []), ensure_ascii=False)}\n\n"
@@ -1754,6 +1777,8 @@ def run_supervision_loop(product_id: str, run_id: str, stop_event: threading.Eve
                 "Claw is your product manager and acceptance lead. Follow Claw's brief exactly.\n"
                 "Do real implementation work in files, not planning-only output.\n"
                 "Use bounded verification only; do not start long-lived servers or watchers.\n"
+                "If Codex MaxPermission is enabled, you are allowed to set up the environment inside the product folder: create a local venv (e.g. .venv), install dependencies (pip/uv), and run real tests/benchmarks to produce evidence artifacts (CSV/MD/logs). Do not defer execution to the user when you have permission.\n"
+                "If you need Python, prefer /usr/bin/python3 (system python) for best wheel compatibility.\n"
                 "Create and maintain a lightweight progress checkpoint at .taskcaptain/progress.json while you work.\n"
                 "That checkpoint should contain useful JSON such as current_stage, current_task, changed_files, blockers, and updated_at. Update it whenever you meaningfully progress.\n"
                 "If you are thinking for a long time, refresh the progress checkpoint before and after major substeps so the supervisor can distinguish healthy deep work from a stall.\n"
@@ -1764,6 +1789,10 @@ def run_supervision_loop(product_id: str, run_id: str, stop_event: threading.Eve
             append_claw_codex_message(product_id, 'claw', f"Implementation turn {turn}. Claw brief:\n{current_codex_task[:3000]}")
             effort = normalize_effort(codex.get('thinking'))
             agent_tokens = [CODEX_ACP_BIN] if CODEX_ACP_BIN else []
+            if codex.get('maxPermission'):
+                # Full-access mode: allow Codex to run commands, write artifacts, and install deps without sandbox restrictions.
+                agent_tokens += ['-c', 'sandbox_mode="danger-full-access"']
+                agent_tokens += ['-c', 'network_access="enabled"']
             if codex.get('model'):
                 agent_tokens += ['-c', f"model=\"{codex.get('model')}\""]
             if effort:
@@ -1808,6 +1837,7 @@ def run_supervision_loop(product_id: str, run_id: str, stop_event: threading.Eve
                 f"Project kind: {project_kind}\n"
                 f"Product name: {cfg.get('name')}\n"
                 f"Goal: {cfg.get('goal')}\n"
+                f"Codex MaxPermission: {bool(codex.get('maxPermission'))}\n"
                 f"Turn: {turn}\n"
                 f"Known acceptance checks: {json.dumps(acceptance_checks, ensure_ascii=False)}\n"
                 f"Delivery bar: {json.dumps(acceptance_profile.get('delivery_bar', []), ensure_ascii=False)}\n"
