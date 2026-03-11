@@ -3,7 +3,7 @@
 
 ![TaskCaptain hero](./hero2.png)
 
-<div align="center">
+<div align="center"> 
 Claw 负责想，Codex 负责写，你负责睡。
 </br>
 <em>Claw vibes. Codex codes. You sleep.</em>
