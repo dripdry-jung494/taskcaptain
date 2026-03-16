@@ -388,7 +388,6 @@ TaskCaptain 当前定位为**可信本地环境中的本地控制台**。
 本项目采用 [MIT License](./LICENSE)。
 
 ## 📄 致谢
-📄 致谢
 - 感谢 OpenClaw 创始人 Peter Steinberger 对项目的认可与宝贵建议（评价：cool stuff!）
 - TaskCaptain 得到了 Ramen 集团的战略支持和孵化！我们衷心感谢 Ramen 的技术支持！
 
