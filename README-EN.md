@@ -227,8 +227,8 @@ taskcaptain/
 Distributed under the [MIT License](https://www.google.com/search?q=./LICENSE).
 
 ## 📄 Acknowledgments
-
-**TaskCaptain is strategically supported and incubated by the Ramen Group!** We sincerely thank Ramen for their technical support!
+- Thanks to Peter Steinberger, creator of OpenClaw, for the recognition and valuable feedback on this project (quote: cool stuff!)
+- TaskCaptain is strategically supported and incubated by Ramen Group! We sincerely thank Ramen for the technical support!
 
 ## 📈 Stats
 <a href="https://star-history.com/#LongWeihan/taskcaptain&type=date">
