@@ -72,6 +72,9 @@ TaskCaptain 致力于把 AI coding 从“聊天式生成”推进到“监督式
 </div>
 
 ### 2. 优化 softmax 性能
+
+详细测评已上传：https://github.com/LongWeihan/softmax-optimization
+
 一句话：
 ```
 梳理目前softmax优化版本的sota，设计能超过当前sota的softmax优化版本，你自己运行并给出结果的对比。我的电脑是7950x+128g+4060ti16g
@@ -110,6 +113,28 @@ TaskCaptain 致力于把 AI coding 从“聊天式生成”推进到“监督式
 | 收益能力 | 年化收益率 | 11.63% | 2.14% |
 | 风险控制 | 最大回撤 | -21.08% | -45.60% |
 | 综合性价比 | 夏普比率 | 0.79 | 0.11 |
+
+
+</div>
+
+### 4. llama2.c 项目级优化
+
+详细测评已上传：https://github.com/LongWeihan/llama2c-optimization
+
+一句话：
+```
+下载这个项目https://github.com/karpathy/llama2.c，优化性能，测试运行并给出和原项目的指标对比结果。我的设备是7950x
+```
+<div align="center">
+  
+### 汇总结果（同模型 / 同 prompt / 同 steps / 同线程数）
+
+| run | baseline tok/s | optimized tok/s | speedup |
+|---|---:|---:|---:|
+| run1 | 132.89 | 603.83 | 4.54× |
+| run2 | 133.70 | 622.54 | 4.66× |
+| run3 | 133.37 | 617.32 | 4.63× |
+| **mean** | **133.32** | **614.56** | **4.61×** |
 
 
 </div>
